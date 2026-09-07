@@ -11,6 +11,7 @@ type BookingNotification = {
 };
 
 const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
+const TELEGRAM_TIMEOUT_MS = 4000;
 
 function compact(value: string | null | undefined, fallback = 'Not provided') {
   return value?.trim() || fallback;
@@ -57,10 +58,14 @@ export async function notifyBookingCreated(booking: BookingNotification) {
     lines.push('', `Admin dashboard: ${adminUrl}`);
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TELEGRAM_TIMEOUT_MS);
+
   try {
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         chat_id: chatId,
         text: lines.join('\n').slice(0, TELEGRAM_MAX_MESSAGE_LENGTH),
@@ -74,5 +79,7 @@ export async function notifyBookingCreated(booking: BookingNotification) {
     }
   } catch (error) {
     console.error('Telegram notification failed', error);
+  } finally {
+    clearTimeout(timeout);
   }
 }
