@@ -1,11 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { createContext, createElement, useState, useEffect, useCallback, useContext, type ReactNode } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 
 type AdminUser = {
   username: string;
 };
 
-export function useAuth() {
+type AuthContextValue = {
+  user: AdminUser | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: unknown | null }>;
+  signOut: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,5 +43,13 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, loading, signIn, signOut };
+  return createElement(AuthContext.Provider, { value: { user, loading, signIn, signOut } }, children);
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used inside AuthProvider');
+  }
+  return context;
 }
