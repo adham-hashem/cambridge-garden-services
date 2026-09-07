@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import type { ApiRequest, ApiResponse } from './types';
-import { HttpError, sendJson } from './http';
+import type { ApiRequest, ApiResponse } from './types.js';
+import { HttpError, sendJson } from './http.js';
 
 const COOKIE_NAME = 'cgs_admin_session';
 const SESSION_SECONDS = 60 * 60 * 8;

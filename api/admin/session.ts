@@ -1,6 +1,6 @@
-import type { ApiRequest, ApiResponse } from '../_lib/types';
-import { assertMethod, sendError, sendJson } from '../_lib/http';
-import { isAuthenticated, sendAuthenticated } from '../_lib/auth';
+import type { ApiRequest, ApiResponse } from '../_lib/types.js';
+import { assertMethod, sendError, sendJson } from '../_lib/http.js';
+import { isAuthenticated, sendAuthenticated } from '../_lib/auth.js';
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {

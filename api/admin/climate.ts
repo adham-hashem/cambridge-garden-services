@@ -1,7 +1,7 @@
-import type { ApiRequest, ApiResponse } from '../_lib/types';
-import { assertMethod, assertSameOrigin, getBody, getQueryString, pick, sendError, sendJson } from '../_lib/http';
-import { requireAdmin } from '../_lib/auth';
-import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase';
+import type { ApiRequest, ApiResponse } from '../_lib/types.js';
+import { assertMethod, assertSameOrigin, getBody, getQueryString, pick, sendError, sendJson } from '../_lib/http.js';
+import { requireAdmin } from '../_lib/auth.js';
+import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase.js';
 
 const CLIMATE_SECTION_ID = '00000000-0000-0000-0000-000000000001';
 

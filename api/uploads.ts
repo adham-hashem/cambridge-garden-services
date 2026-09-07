@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { ApiRequest, ApiResponse } from './_lib/types';
-import { assertMethod, assertSameOrigin, getBody, sendError, sendJson } from './_lib/http';
-import { isAuthenticated, requireAdmin } from './_lib/auth';
-import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase';
+import type { ApiRequest, ApiResponse } from './_lib/types.js';
+import { assertMethod, assertSameOrigin, getBody, sendError, sendJson } from './_lib/http.js';
+import { isAuthenticated, requireAdmin } from './_lib/auth.js';
+import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 
 const publicFolders = new Set(['bookings']);
 const adminFolders = new Set(['before', 'after', 'articles', 'climate']);

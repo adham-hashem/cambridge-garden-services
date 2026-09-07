@@ -1,4 +1,4 @@
-import type { ApiRequest, ApiResponse } from '../_lib/types';
+import type { ApiRequest, ApiResponse } from '../_lib/types.js';
 import {
   assertMethod,
   assertSameOrigin,
@@ -9,9 +9,9 @@ import {
   optionalNumber,
   sendError,
   sendJson,
-} from '../_lib/http';
-import { requireAdmin } from '../_lib/auth';
-import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase';
+} from '../_lib/http.js';
+import { requireAdmin } from '../_lib/auth.js';
+import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase.js';
 
 const statuses = new Set(['new', 'contacted', 'confirmed', 'completed', 'cancelled']);
 

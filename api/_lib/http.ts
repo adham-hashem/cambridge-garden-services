@@ -1,4 +1,4 @@
-import type { ApiRequest, ApiResponse } from './types';
+import type { ApiRequest, ApiResponse } from './types.js';
 
 export class HttpError extends Error {
   status: number;
