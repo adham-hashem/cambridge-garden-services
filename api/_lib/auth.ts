@@ -5,6 +5,22 @@ import { HttpError, sendJson } from './http';
 const COOKIE_NAME = 'cgs_admin_session';
 const SESSION_SECONDS = 60 * 60 * 8;
 
+export function getAdminAuthConfigError() {
+  if (!process.env.ADMIN_USERNAME) return 'ADMIN_USERNAME is not configured';
+  if (!process.env.ADMIN_PASSWORD) return 'ADMIN_PASSWORD is not configured';
+  if (!process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET.length < 32) {
+    return 'ADMIN_SESSION_SECRET must be at least 32 characters';
+  }
+  return null;
+}
+
+function assertAdminAuthConfigured() {
+  const configError = getAdminAuthConfigError();
+  if (configError) {
+    throw new HttpError(500, `Admin login is not configured: ${configError}`);
+  }
+}
+
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.length < 32) {
@@ -33,14 +49,12 @@ function parseCookies(req: ApiRequest) {
 }
 
 export function validateCredentials(username: string, password: string) {
+  assertAdminAuthConfigured();
+
   const expectedUsername = process.env.ADMIN_USERNAME;
   const expectedPassword = process.env.ADMIN_PASSWORD;
 
-  if (!expectedUsername || !expectedPassword) {
-    throw new HttpError(500, 'Admin credentials are not configured');
-  }
-
-  return equal(username, expectedUsername) && equal(password, expectedPassword);
+  return equal(username, expectedUsername as string) && equal(password, expectedPassword as string);
 }
 
 export function createSessionCookie() {
@@ -57,6 +71,8 @@ export function clearSessionCookie() {
 }
 
 export function isAuthenticated(req: ApiRequest) {
+  if (getAdminAuthConfigError()) return false;
+
   const token = parseCookies(req)[COOKIE_NAME];
   if (!token) return false;
 

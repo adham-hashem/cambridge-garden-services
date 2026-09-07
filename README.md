@@ -42,6 +42,13 @@ SITE_ORIGIN
 
 `ADMIN_SESSION_SECRET` must be a random string of at least 32 characters. `SITE_ORIGIN` should be the production URL, for example `https://www.example.com`.
 
+If admin login returns `500`, verify these variables exist in the deployed Vercel environment and redeploy:
+
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET` with at least 32 characters
+- `SITE_ORIGIN` as a full URL, for example `https://cambridge-garden-services.vercel.app`
+
 ## Supabase Migrations Through GitHub Actions
 
 The repo includes `.github/workflows/supabase-migrations.yml`. Add this GitHub Actions secret:

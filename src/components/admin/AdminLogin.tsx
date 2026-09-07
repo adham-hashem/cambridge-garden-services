@@ -16,7 +16,7 @@ export default function AdminLogin() {
 
     const { error: signInError } = await signIn(username.trim(), password);
     if (signInError) {
-      setError('Invalid username or password');
+      setError(signInError instanceof Error ? signInError.message : 'Invalid username or password');
       setLoading(false);
     }
   };
