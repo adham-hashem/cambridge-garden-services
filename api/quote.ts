@@ -1,6 +1,7 @@
 import type { ApiRequest, ApiResponse } from './_lib/types.js';
 import { assertMethod, assertSameOrigin, getBody, optionalString, requireString, sendError, sendJson } from './_lib/http.js';
 import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
+import { notifyBookingCreated } from './_lib/telegram.js';
 
 const serviceIdMap: Record<string, string> = {
   'Garden Design': 'garden-design',
@@ -59,6 +60,18 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       }
       throw error;
     }
+
+    await notifyBookingCreated({
+      name,
+      email,
+      phone: payload.p_phone,
+      address: payload.p_address,
+      projectType,
+      budget,
+      projectDetails,
+      attachmentUrl: payload.p_attachment_url,
+      promoCode,
+    });
 
     sendJson(res, 201, { ok: true });
   } catch (error) {

@@ -36,6 +36,8 @@ ADMIN_USERNAME
 ADMIN_PASSWORD
 ADMIN_SESSION_SECRET
 SITE_ORIGIN
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
 ```
 
 `ADMIN_USERNAME` and `ADMIN_PASSWORD` are the static admin credentials. Change them in Vercel without changing code.
@@ -48,6 +50,8 @@ If admin login returns `500`, verify these variables exist in the deployed Verce
 - `ADMIN_PASSWORD`
 - `ADMIN_SESSION_SECRET` with at least 32 characters
 - `SITE_ORIGIN` as a full URL, for example `https://cambridge-garden-services.vercel.app`
+
+`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` enable booking notifications to Telegram. Keep the bot token server-only in Vercel; never commit it to the repo.
 
 ## Supabase Migrations Through GitHub Actions
 
