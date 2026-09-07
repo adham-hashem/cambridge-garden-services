@@ -97,9 +97,10 @@ export default function QuoteForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
     setStatus('submitting');
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(form);
     const budget = String(formData.get('budget') || '');
     const projectType = String(formData.get('project_type') || '');
 
@@ -118,8 +119,9 @@ export default function QuoteForm() {
 
     try {
       await submitQuoteRequest(payload);
+      form.reset();
+      if (fileInputRef.current) fileInputRef.current.value = '';
       setStatus('success');
-      e.currentTarget.reset();
       setFileName(null);
       setAttachmentUrl(null);
       setAppliedPromo(null);
