@@ -1,0 +1,72 @@
+# Cambridge Garden Services
+
+Production-ready Vite + React frontend with Vercel serverless API routes and Supabase persistence.
+
+## Local Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm ci
+   ```
+
+2. Copy `.env.example` to `.env.local` and fill in the values.
+
+3. Run the app:
+
+   ```bash
+   npm run dev
+   ```
+
+For full API behavior locally, run with Vercel dev so `/api/*` functions are available:
+
+```bash
+npx vercel dev
+```
+
+## Vercel Environment Variables
+
+Set these in the Vercel project settings:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+ADMIN_USERNAME
+ADMIN_PASSWORD
+ADMIN_SESSION_SECRET
+SITE_ORIGIN
+```
+
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` are the static admin credentials. Change them in Vercel without changing code.
+
+`ADMIN_SESSION_SECRET` must be a random string of at least 32 characters. `SITE_ORIGIN` should be the production URL, for example `https://www.example.com`.
+
+## Supabase Migrations Through GitHub Actions
+
+The repo includes GitHub Actions workflows for both common layouts:
+
+- If `project/` is the repository root, use `project/.github/workflows/supabase-migrations.yml`.
+- If the repository root contains the `project/` folder, use `.github/workflows/supabase-migrations.yml` at the parent root.
+
+Add this GitHub Actions secret:
+
+```text
+SUPABASE_DB_URL
+```
+
+Use the Postgres connection string from Supabase project settings. Pushing migrations to `main` runs:
+
+```bash
+supabase db push --db-url "$SUPABASE_DB_URL"
+```
+
+Do not paste migration SQL manually into the Supabase SQL editor; add new files under `supabase/migrations/` and push them through GitHub Actions.
+
+## Verification
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
