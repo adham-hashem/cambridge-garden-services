@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - project/supabase/migrations/**
+      - supabase/migrations/**
       - .github/workflows/supabase-migrations.yml
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: project
+        working-directory: .
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

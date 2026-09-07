@@ -44,12 +44,7 @@ SITE_ORIGIN
 
 ## Supabase Migrations Through GitHub Actions
 
-The repo includes GitHub Actions workflows for both common layouts:
-
-- If `project/` is the repository root, use `project/.github/workflows/supabase-migrations.yml`.
-- If the repository root contains the `project/` folder, use `.github/workflows/supabase-migrations.yml` at the parent root.
-
-Add this GitHub Actions secret:
+The repo includes `.github/workflows/supabase-migrations.yml`. Add this GitHub Actions secret:
 
 ```text
 SUPABASE_DB_URL
