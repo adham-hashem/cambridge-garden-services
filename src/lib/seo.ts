@@ -4,6 +4,8 @@ import type { ServiceItem } from '@/data/content';
 export const SITE_URL = 'https://www.cambridgegardenservices.co.uk';
 export const SITE_NAME = 'Cambridge Garden Services';
 export const DEFAULT_IMAGE = `${SITE_URL}/WhatsApp_Image_2026-09-03_at_12.01.32_PM.jpeg`;
+export const FACEBOOK_URL = 'https://www.facebook.com/share/1Hkr7t88s4/';
+export const GOOGLE_BUSINESS_URL = 'https://share.google/qCR4oZsCSFSUlBd3a';
 
 export const pageSeo = {
   home: {
@@ -62,6 +64,7 @@ export function localBusinessStructuredData() {
     telephone: ['+441223864703', '+447814584119'],
     email: 'info@cambridgegardenservices.co.uk',
     priceRange: '$$',
+    sameAs: [FACEBOOK_URL, GOOGLE_BUSINESS_URL],
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Cambridge',
