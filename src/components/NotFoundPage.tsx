@@ -2,10 +2,16 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 
 export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-cream-100">
+      <SEO
+        title="Page Not Found | Cambridge Garden Services"
+        description="The requested Cambridge Garden Services page could not be found."
+        noIndex
+      />
       <Navigation />
       <main className="flex min-h-[70vh] items-center justify-center px-6 pb-20 pt-32">
         <div className="max-w-xl text-center">

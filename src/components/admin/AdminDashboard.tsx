@@ -1,6 +1,8 @@
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import AdminLogin from '@/components/admin/AdminLogin';
+import SEO from '@/components/SEO';
+import { pageSeo } from '@/lib/seo';
 import ProjectsPanel from '@/components/admin/ProjectsPanel';
 import BookingsPanel from '@/components/admin/BookingsPanel';
 import PromoCodesPanel from '@/components/admin/PromoCodesPanel';
@@ -42,17 +44,24 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream-100">
+        <SEO title={pageSeo.admin.title} description={pageSeo.admin.description} noIndex />
         <Loader2 size={32} className="animate-spin text-forest-600" />
       </div>
     );
   }
 
   if (!user) {
-    return <AdminLogin />;
+    return (
+      <>
+        <SEO title={pageSeo.admin.title} description={pageSeo.admin.description} noIndex />
+        <AdminLogin />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen bg-cream-100">
+      <SEO title={pageSeo.admin.title} description={pageSeo.admin.description} noIndex />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-sage-200 bg-cream-50/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">

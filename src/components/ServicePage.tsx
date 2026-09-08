@@ -8,6 +8,8 @@ import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import QuoteForm from '@/components/QuoteForm';
+import SEO from '@/components/SEO';
+import { breadcrumbStructuredData, serviceSeo, serviceStructuredData } from '@/lib/seo';
 import { ArrowLeft, ArrowRight, Eye, ClipboardList, Sprout, Loader2, Plus } from 'lucide-react';
 
 const PAGE_SIZE = 3;
@@ -59,6 +61,11 @@ export default function ServicePage() {
   if (!service) {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+        <SEO
+          title="Service Not Found | Cambridge Garden Services"
+          description="The requested Cambridge Garden Services page could not be found."
+          noIndex
+        />
         <div className="text-center">
           <h1 className="font-serif text-3xl text-forest-800 mb-4">Service not found</h1>
           <Link to="/" className="font-sans text-sm text-sage-500 hover:text-forest-700">
@@ -70,6 +77,7 @@ export default function ServicePage() {
   }
 
   const otherServices = servicesList.filter((s) => s.id !== service.id);
+  const seo = serviceSeo(service);
 
   const goToServices = () => {
     navigate({ pathname: '/', hash: 'services' });
@@ -83,6 +91,20 @@ export default function ServicePage() {
 
   return (
     <div className="min-h-screen bg-cream-100">
+      <SEO
+        title={seo.title}
+        description={seo.description}
+        path={seo.path}
+        image={seo.image}
+        structuredData={[
+          serviceStructuredData(service),
+          breadcrumbStructuredData([
+            { name: 'Home', path: '/' },
+            { name: 'Services', path: '/#services' },
+            { name: service.title, path: seo.path },
+          ]),
+        ]}
+      />
       <Navigation />
 
       <section className="relative h-[70vh] w-full overflow-hidden">

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
+import { localBusinessStructuredData, pageSeo } from '@/lib/seo';
 
 const contactDetails = [
   { icon: MapPin, label: 'Based in', value: 'Cambridge, UK' },
@@ -26,6 +28,12 @@ const WHATSAPP_NUMBER = '447814584119';
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-cream-100">
+      <SEO
+        title={pageSeo.about.title}
+        description={pageSeo.about.description}
+        path="/about"
+        structuredData={localBusinessStructuredData()}
+      />
       <Navigation />
 
       <main>

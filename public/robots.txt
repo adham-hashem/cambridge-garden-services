@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/admin
+Disallow: /api/uploads
+
+Sitemap: https://www.cambridgegardenservices.co.uk/sitemap.xml

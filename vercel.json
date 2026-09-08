@@ -1,7 +1,25 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "cambridge-garden-services.vercel.app" }],
+      "destination": "https://www.cambridgegardenservices.co.uk/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "cambridgegardenservices.co.uk" }],
+      "destination": "https://www.cambridgegardenservices.co.uk/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
-      "source": "/((?!api/.*).*)",
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/((?!api/|assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],

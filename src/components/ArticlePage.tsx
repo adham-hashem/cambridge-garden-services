@@ -4,6 +4,8 @@ import { fetchArticleById, fetchPublishedArticles } from '@/lib/articles';
 import type { Article } from '@/types/article';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
+import { articleSeo, articleStructuredData, breadcrumbStructuredData } from '@/lib/seo';
 import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
 
 export default function ArticlePage() {
@@ -37,6 +39,11 @@ export default function ArticlePage() {
   if (!article) {
     return (
       <div className="min-h-screen bg-cream-100">
+        <SEO
+          title="Article Not Found | Cambridge Garden Services"
+          description="The requested Cambridge Garden Services article could not be found."
+          noIndex
+        />
         <Navigation />
         <div className="mx-auto max-w-2xl px-6 py-32 text-center">
           <h1 className="font-serif text-3xl font-light text-forest-800">Article Not Found</h1>
@@ -54,8 +61,25 @@ export default function ArticlePage() {
     );
   }
 
+  const seo = articleSeo(article);
+
   return (
     <div className="min-h-screen bg-cream-50">
+      <SEO
+        title={seo.title}
+        description={seo.description}
+        path={seo.path}
+        image={seo.image}
+        type="article"
+        structuredData={[
+          articleStructuredData(article),
+          breadcrumbStructuredData([
+            { name: 'Home', path: '/' },
+            { name: 'Garden Journal', path: '/#journal' },
+            { name: article.title, path: seo.path },
+          ]),
+        ]}
+      />
       <Navigation />
 
       {/* Hero Image */}

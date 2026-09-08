@@ -3,10 +3,21 @@ import { ArrowLeft, Leaf } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import ClimateExperience from '@/components/ClimateExperience';
+import SEO from '@/components/SEO';
+import { breadcrumbStructuredData, pageSeo } from '@/lib/seo';
 
 export default function ClimatePage() {
   return (
     <div className="min-h-screen bg-forest-950">
+      <SEO
+        title={pageSeo.climate.title}
+        description={pageSeo.climate.description}
+        path="/climate-ready"
+        structuredData={breadcrumbStructuredData([
+          { name: 'Home', path: '/' },
+          { name: 'Climate-Ready Gardens', path: '/climate-ready' },
+        ])}
+      />
       <Navigation />
 
       <main>
