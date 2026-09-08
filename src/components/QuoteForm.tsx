@@ -1,7 +1,8 @@
-import { useState, useRef, type FormEvent, type ChangeEvent } from 'react';
+import { useEffect, useState, useRef, type FormEvent, type ChangeEvent } from 'react';
 import { uploadImage } from '@/lib/api';
 import { validatePromoCode, calculateDiscount } from '@/lib/promoCodes';
 import { submitQuoteRequest } from '@/lib/quotes';
+import { fetchPublishedServices } from '@/lib/services';
 import type { PromoCode } from '@/types/admin';
 import { Upload, Check, Loader2, AlertCircle, Tag, X } from 'lucide-react';
 
@@ -50,6 +51,7 @@ function parseBudgetEstimate(value: string) {
 
 export default function QuoteForm() {
   const [status, setStatus] = useState<Status>('idle');
+  const [projectTypeOptions, setProjectTypeOptions] = useState(projectTypes);
   const [fileName, setFileName] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -62,11 +64,24 @@ export default function QuoteForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCustomBudget = selectedBudget === CUSTOM_BUDGET_OPTION;
+  const displayBudget = isCustomBudget ? customBudget.trim() : selectedBudget;
   const baseEstimate = isCustomBudget
     ? parseBudgetEstimate(customBudget)
     : selectedBudget ? budgetToEstimate[selectedBudget] || 0 : 0;
   const discountAmount = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).discountAmount : 0;
   const finalPrice = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).finalPrice : baseEstimate;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublishedServices().then((services) => {
+      if (!cancelled && services.length > 0) {
+        setProjectTypeOptions([...services.map((service) => service.title), 'Other']);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,6 +160,7 @@ export default function QuoteForm() {
 
     try {
       await submitQuoteRequest(payload);
+      form.reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
       setStatus('success');
       setFileName(null);
@@ -154,6 +170,9 @@ export default function QuoteForm() {
       setPromoMessage(null);
       setSelectedBudget('');
       setCustomBudget('');
+      window.setTimeout(() => {
+        document.getElementById('quote')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
     } catch (err) {
       console.error('Quote submission failed', err);
       setStatus('error');
@@ -217,7 +236,7 @@ export default function QuoteForm() {
             <SelectField
               label="Project Type"
               name="project_type"
-              options={projectTypes}
+              options={projectTypeOptions}
               required
             />
             <SelectField
@@ -337,16 +356,16 @@ export default function QuoteForm() {
             )}
           </div>
 
-          {/* Price Summary */}
-          {baseEstimate > 0 && (
+          {/* Budget Summary */}
+          {displayBudget && (
             <div className="rounded-xl bg-forest-50/50 p-4">
               <p className="mb-3 font-sans text-xs uppercase tracking-widest-2 text-forest-600">
-                Estimated Price
+                Selected Budget
               </p>
               <div className="space-y-1.5">
                 <div className="flex justify-between font-sans text-sm text-forest-700">
-                  <span>Estimated base price</span>
-                  <span>£{baseEstimate.toLocaleString()}</span>
+                  <span>{isCustomBudget ? 'Custom budget' : 'Budget range'}</span>
+                  <span>{displayBudget}</span>
                 </div>
                 {appliedPromo && discountAmount > 0 && (
                   <div className="flex justify-between font-sans text-sm text-forest-600">
@@ -354,13 +373,15 @@ export default function QuoteForm() {
                     <span>-£{discountAmount.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-sage-200 pt-1.5 font-serif text-lg font-medium text-forest-800">
-                  <span>Final estimate</span>
-                  <span>£{finalPrice.toLocaleString()}</span>
-                </div>
+                {appliedPromo && baseEstimate > 0 && (
+                  <div className="flex justify-between border-t border-sage-200 pt-1.5 font-serif text-lg font-medium text-forest-800">
+                    <span>After promo</span>
+                    <span>£{finalPrice.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
               <p className="mt-2 font-sans text-xs text-forest-400">
-                Final pricing confirmed after site visit. Estimate based on selected budget range.
+                The selected budget is sent exactly as entered. Final pricing is confirmed after review.
               </p>
             </div>
           )}

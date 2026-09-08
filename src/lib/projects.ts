@@ -36,6 +36,22 @@ export async function fetchPublishedProjects(
   return { projects: projects.slice(0, pageSize), hasMore };
 }
 
+export async function fetchPublishedProjectById(id: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', id)
+    .eq('published', true)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching project:', error.message);
+    return null;
+  }
+
+  return data as Project | null;
+}
+
 export async function fetchAllProjects(
   page: number = 0,
   pageSize: number = 10,

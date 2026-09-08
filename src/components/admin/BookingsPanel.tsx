@@ -8,7 +8,7 @@ import {
   type BookingStatus,
 } from '@/lib/bookings';
 import type { Booking } from '@/types/admin';
-import { services } from '@/data/content';
+import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
 import {
   Search,
   Trash2,
@@ -45,6 +45,7 @@ export default function BookingsPanel() {
   const [confirmDelete, setConfirmDelete] = useState<Booking | null>(null);
   const [priceInput, setPriceInput] = useState<string>('');
   const [priceSaving, setPriceSaving] = useState(false);
+  const [services, setServices] = useState<ServiceAdminItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +61,10 @@ export default function BookingsPanel() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    fetchPublishedServices().then(setServices);
+  }, []);
 
   const handleStatusChange = async (id: string, status: BookingStatus) => {
     await updateBookingStatus(id, status);
@@ -140,7 +145,7 @@ export default function BookingsPanel() {
                     <th className="hidden px-4 py-3 text-left font-sans text-xs uppercase tracking-widest-2 text-forest-600 md:table-cell">Service</th>
                     <th className="hidden px-4 py-3 text-left font-sans text-xs uppercase tracking-widest-2 text-forest-600 lg:table-cell">Date</th>
                     <th className="px-4 py-3 text-center font-sans text-xs uppercase tracking-widest-2 text-forest-600">Status</th>
-                    <th className="hidden px-4 py-3 text-right font-sans text-xs uppercase tracking-widest-2 text-forest-600 sm:table-cell">Price</th>
+                    <th className="hidden px-4 py-3 text-right font-sans text-xs uppercase tracking-widest-2 text-forest-600 sm:table-cell">Budget</th>
                     <th className="px-4 py-3 text-right font-sans text-xs uppercase tracking-widest-2 text-forest-600">Actions</th>
                   </tr>
                 </thead>
@@ -184,7 +189,7 @@ export default function BookingsPanel() {
                       </td>
                       <td className="hidden px-4 py-3 text-right sm:table-cell">
                         <span className="font-sans text-sm text-forest-700">
-                          {booking.final_price != null ? `£${booking.final_price.toLocaleString()}` : '—'}
+                          {booking.budget || '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -302,8 +307,13 @@ export default function BookingsPanel() {
 
               {/* Promo + Price */}
               <div>
-                <p className="mb-3 font-sans text-xs uppercase tracking-widest-2 text-forest-600">Pricing</p>
+                <p className="mb-3 font-sans text-xs uppercase tracking-widest-2 text-forest-600">Budget and Final Price</p>
                 <div className="space-y-3 rounded-xl bg-sage-50/30 p-4">
+                  {selected.budget && (
+                    <div className="font-sans text-sm text-forest-600">
+                      Customer budget: <span className="font-medium text-forest-800">{selected.budget}</span>
+                    </div>
+                  )}
                   {selected.promo_code && (
                     <div className="flex items-center gap-2 font-sans text-sm text-forest-600">
                       <Tag size={14} />

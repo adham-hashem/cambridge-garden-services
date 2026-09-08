@@ -4,6 +4,7 @@ import AdminLogin from '@/components/admin/AdminLogin';
 import SEO from '@/components/SEO';
 import { pageSeo } from '@/lib/seo';
 import ProjectsPanel from '@/components/admin/ProjectsPanel';
+import ServicesPanel from '@/components/admin/ServicesPanel';
 import BookingsPanel from '@/components/admin/BookingsPanel';
 import PromoCodesPanel from '@/components/admin/PromoCodesPanel';
 import ArticlesPanel from '@/components/admin/ArticlesPanel';
@@ -14,15 +15,17 @@ import {
   ExternalLink,
   CalendarCheck,
   FolderKanban,
+  ListTree,
   TicketPercent,
   Newspaper,
   Leaf,
 } from 'lucide-react';
 
-type Tab = 'bookings' | 'projects' | 'promos' | 'articles' | 'climate';
+type Tab = 'bookings' | 'services' | 'projects' | 'promos' | 'articles' | 'climate';
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarCheck }[] = [
   { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
+  { id: 'services', label: 'Services', icon: ListTree },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'promos', label: 'Promo Codes', icon: TicketPercent },
   { id: 'articles', label: 'Articles', icon: Newspaper },
@@ -88,7 +91,7 @@ export default function AdminDashboard() {
 
         {/* Tab Bar */}
         <div className="mx-auto max-w-7xl px-6">
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -113,6 +116,7 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-7xl px-6 py-8">
         {activeTab === 'bookings' && <BookingsPanel />}
+        {activeTab === 'services' && <ServicesPanel />}
         {activeTab === 'projects' && <ProjectsPanel />}
         {activeTab === 'promos' && <PromoCodesPanel />}
         {activeTab === 'articles' && <ArticlesPanel />}

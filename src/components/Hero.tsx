@@ -31,10 +31,10 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-t from-cream-200/30 via-transparent to-transparent" />
       </div>
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center pt-20 sm:pt-0">
+      <div className="relative z-10 flex h-full -translate-y-5 flex-col items-center justify-center px-6 pt-20 text-center sm:translate-y-0 sm:pt-0">
         <h1
           aria-label="Cambridge Garden Services"
-          className="opacity-0 animate-fade-up font-serif text-[2.625rem] font-light leading-[1.04] text-cream-50 text-balance min-[375px]:text-5xl sm:text-6xl sm:leading-[1.1] md:text-7xl lg:text-8xl"
+          className="opacity-0 animate-fade-up font-serif text-[clamp(3rem,15.5vw,4.25rem)] font-light leading-[1.02] text-cream-50 text-balance sm:text-6xl sm:leading-[1.1] md:text-7xl lg:text-8xl"
           style={{ animationDelay: '0.6s' }}
         >
           Cambridge Garden

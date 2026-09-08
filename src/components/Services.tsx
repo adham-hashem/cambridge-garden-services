@@ -1,8 +1,30 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { services } from '@/data/content';
+import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
 import { ArrowUpRight } from 'lucide-react';
 
 export default function Services() {
+  const [serviceItems, setServiceItems] = useState<ServiceAdminItem[]>(() =>
+    services.map((service, index) => ({
+      ...service,
+      published: true,
+      sort_order: index * 10,
+      created_at: '',
+      updated_at: '',
+    }))
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublishedServices().then((items) => {
+      if (!cancelled) setServiceItems(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section id="services" className="relative bg-cream-50 py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
@@ -20,7 +42,7 @@ export default function Services() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {services.map((service, i) => {
+          {serviceItems.map((service, i) => {
             const delayClass = `reveal-delay-${(i % 3) + 1}`;
             return (
               <Link

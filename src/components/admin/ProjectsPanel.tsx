@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { services } from '@/data/content';
 import {
   fetchAllProjects,
   createProject,
@@ -7,6 +6,7 @@ import {
   deleteProject,
   toggleProjectPublished,
 } from '@/lib/projects';
+import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
 import type { Project, ProjectInput } from '@/types/project';
 import ProjectForm from '@/components/admin/ProjectForm';
 import {
@@ -34,6 +34,7 @@ export default function ProjectsPanel() {
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null);
+  const [services, setServices] = useState<ServiceAdminItem[]>([]);
 
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
@@ -52,6 +53,10 @@ export default function ProjectsPanel() {
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
+
+  useEffect(() => {
+    fetchPublishedServices().then(setServices);
+  }, []);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -249,6 +254,7 @@ export default function ProjectsPanel() {
       {showForm && (
         <ProjectForm
           project={editingProject}
+          services={services}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditingProject(null); }}
         />

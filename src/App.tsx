@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import HomePage from '@/components/HomePage';
+import ServicesPage from '@/components/ServicesPage';
 import ServicePage from '@/components/ServicePage';
+import ProjectPage from '@/components/ProjectPage';
 import ArticlePage from '@/components/ArticlePage';
 import AboutPage from '@/components/AboutPage';
 import ClimatePage from '@/components/ClimatePage';
@@ -14,7 +16,9 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:serviceId" element={<ServicePage />} />
+          <Route path="/projects/:projectId" element={<ProjectPage />} />
           <Route path="/journal/:id" element={<ArticlePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/climate-ready" element={<ClimatePage />} />

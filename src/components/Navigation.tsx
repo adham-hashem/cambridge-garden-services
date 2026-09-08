@@ -5,7 +5,7 @@ import { Menu, X } from 'lucide-react';
 type NavLink = { label: string; hash?: string; to?: string };
 
 const navLinks: NavLink[] = [
-  { label: 'Services', hash: 'services' },
+  { label: 'Services', to: '/services' },
   { label: 'Projects', hash: 'projects' },
   { label: 'About', to: '/about' },
   { label: 'Climate-Ready', to: '/climate-ready' },

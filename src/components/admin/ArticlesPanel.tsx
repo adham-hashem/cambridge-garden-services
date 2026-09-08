@@ -387,13 +387,6 @@ function ArticleForm({
                 )}
               </button>
             )}
-            <input
-              type="text"
-              value={form.cover_image}
-              onChange={(e) => update('cover_image', e.target.value)}
-              placeholder="Or paste image URL..."
-              className="mt-2 w-full rounded-lg border border-sage-200/40 bg-cream-100/30 px-3 py-2 font-sans text-xs text-forest-700 placeholder-forest-400 outline-none focus:border-forest-400"
-            />
           </div>
 
           {/* Title */}

@@ -43,7 +43,7 @@ function assertUploadableImage(file: File) {
   }
 }
 
-export async function uploadImage(file: File, folder: 'bookings' | 'before' | 'after' | 'articles' | 'climate') {
+export async function uploadImage(file: File, folder: 'bookings' | 'before' | 'after' | 'articles' | 'climate' | 'services') {
   assertUploadableImage(file);
 
   const signed = await apiSend<{ path: string; token: string }>('/api/uploads', 'POST', {

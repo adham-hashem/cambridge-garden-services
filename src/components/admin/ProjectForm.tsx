@@ -1,11 +1,12 @@
 import { useState, useRef, type FormEvent } from 'react';
-import { services } from '@/data/content';
 import { uploadProjectImage } from '@/lib/projects';
+import type { ServiceAdminItem } from '@/lib/services';
 import type { Project, ProjectInput } from '@/types/project';
 import { X, Loader2, ImageIcon, Upload, Check } from 'lucide-react';
 
 interface ProjectFormProps {
   project: Project | null;
+  services: ServiceAdminItem[];
   onSave: (input: ProjectInput, id?: string) => Promise<void>;
   onClose: () => void;
 }
@@ -23,7 +24,7 @@ const emptyForm: ProjectInput = {
   sort_order: 0,
 };
 
-export default function ProjectForm({ project, onSave, onClose }: ProjectFormProps) {
+export default function ProjectForm({ project, services, onSave, onClose }: ProjectFormProps) {
   const [form, setForm] = useState<ProjectInput>(
     project
       ? {
@@ -146,14 +147,12 @@ export default function ProjectForm({ project, onSave, onClose }: ProjectFormPro
               value={form.before_image}
               uploading={uploadingBefore}
               onUpload={(file) => handleImageUpload(file, 'before')}
-              onChange={(v) => update('before_image', v)}
             />
             <ImageUploadField
               label="After Image"
               value={form.after_image}
               uploading={uploadingAfter}
               onUpload={(file) => handleImageUpload(file, 'after')}
-              onChange={(v) => update('after_image', v)}
             />
           </div>
 
@@ -221,13 +220,11 @@ function ImageUploadField({
   value,
   uploading,
   onUpload,
-  onChange,
 }: {
   label: string;
   value: string;
   uploading: boolean;
   onUpload: (file: File) => void;
-  onChange: (value: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -281,14 +278,6 @@ function ImageUploadField({
           )}
         </button>
       )}
-      {/* Allow manual URL override */}
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Or paste image URL..."
-        className="mt-2 w-full rounded-lg border border-sage-200/40 bg-cream-100/30 px-3 py-2 font-sans text-xs text-forest-700 placeholder-forest-400 outline-none transition-colors focus:border-forest-400"
-      />
     </div>
   );
 }

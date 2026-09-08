@@ -69,11 +69,66 @@ async function getPublishedArticleUrls(): Promise<SitemapUrl[]> {
   }
 }
 
+async function getPublishedServiceUrls(): Promise<SitemapUrl[]> {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return [];
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('services')
+      .select('id, updated_at')
+      .eq('published', true)
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((service) => ({
+      loc: `${SITE_URL}/services/${service.id}`,
+      lastmod: String(service.updated_at || TODAY).slice(0, 10),
+      changefreq: 'monthly',
+      priority: '0.8',
+    }));
+  } catch (error) {
+    console.error('Sitemap service fetch failed', error);
+    return [];
+  }
+}
+
+async function getPublishedProjectUrls(): Promise<SitemapUrl[]> {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return [];
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .select('id, updated_at')
+      .eq('published', true)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((project) => ({
+      loc: `${SITE_URL}/projects/${project.id}`,
+      lastmod: String(project.updated_at || TODAY).slice(0, 10),
+      changefreq: 'monthly',
+      priority: '0.7',
+    }));
+  } catch (error) {
+    console.error('Sitemap project fetch failed', error);
+    return [];
+  }
+}
+
 export default async function handler(_req: ApiRequest, res: ApiResponse) {
-  const staticUrls: SitemapUrl[] = [
+  const baseUrls: SitemapUrl[] = [
     { loc: `${SITE_URL}/`, lastmod: TODAY, changefreq: 'weekly', priority: '1.0' },
+    { loc: `${SITE_URL}/services`, lastmod: TODAY, changefreq: 'monthly', priority: '0.9' },
     { loc: `${SITE_URL}/about`, lastmod: TODAY, changefreq: 'monthly', priority: '0.8' },
     { loc: `${SITE_URL}/climate-ready`, lastmod: TODAY, changefreq: 'monthly', priority: '0.7' },
+  ];
+  const fallbackServiceUrls: SitemapUrl[] = [
     ...serviceIds.map((id) => ({
       loc: `${SITE_URL}/services/${id}`,
       lastmod: TODAY,
@@ -81,7 +136,12 @@ export default async function handler(_req: ApiRequest, res: ApiResponse) {
       priority: '0.8',
     })),
   ];
-  const urls = [...staticUrls, ...(await getPublishedArticleUrls())];
+  const [serviceUrls, projectUrls, articleUrls] = await Promise.all([
+    getPublishedServiceUrls(),
+    getPublishedProjectUrls(),
+    getPublishedArticleUrls(),
+  ]);
+  const urls = [...baseUrls, ...(serviceUrls.length > 0 ? serviceUrls : fallbackServiceUrls), ...projectUrls, ...articleUrls];
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',

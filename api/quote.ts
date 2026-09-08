@@ -15,6 +15,23 @@ const serviceIdMap: Record<string, string> = {
   'Garden Maintenance': 'garden-maintenance',
 };
 
+async function resolveServiceId(projectType: string) {
+  if (serviceIdMap[projectType]) return serviceIdMap[projectType];
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('services')
+      .select('id')
+      .eq('title', projectType)
+      .maybeSingle();
+
+    if (error) return null;
+    return data?.id || null;
+  } catch {
+    return null;
+  }
+}
+
 function emailIsValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -37,6 +54,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const projectDetails = requireString(body.project_details, 'Project details', 4000);
     const budget = optionalString(body.budget, 80);
     const promoCode = optionalString(body.promo_code, 40)?.toUpperCase() || null;
+    const serviceId = await resolveServiceId(projectType);
 
     const payload = {
       p_name: name,
@@ -44,7 +62,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       p_phone: optionalString(body.phone, 80),
       p_address: optionalString(body.address, 300),
       p_project_type: projectType,
-      p_service_id: serviceIdMap[projectType] || null,
+      p_service_id: serviceId,
       p_budget: budget,
       p_project_details: projectDetails,
       p_attachment_name: optionalString(body.attachment_name, 255),

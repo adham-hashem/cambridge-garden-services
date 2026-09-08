@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getServiceById, services as servicesList } from '@/data/content';
 import { fetchPublishedProjects } from '@/lib/projects';
+import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
 import type { Project } from '@/types/project';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
@@ -17,7 +17,8 @@ const PAGE_SIZE = 3;
 export default function ServicePage() {
   const { serviceId } = useParams<{ serviceId: string }>();
   const navigate = useNavigate();
-  const service = serviceId ? getServiceById(serviceId) : undefined;
+  const [service, setService] = useState<ServiceAdminItem | null | undefined>(undefined);
+  const [allServices, setAllServices] = useState<ServiceAdminItem[]>([]);
   const [scrollY, setScrollY] = useState(0);
   const [projects, setProjects] = useState<Project[]>([]);
   const [page, setPage] = useState(0);
@@ -44,12 +45,40 @@ export default function ServicePage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     window.scrollTo(0, 0);
-    if (serviceId) {
+
+    async function loadService() {
+      setService(undefined);
       setPage(0);
       setProjects([]);
-      loadProjects(serviceId, 0, true);
+      setHasMore(false);
+      setLoading(true);
+
+      if (!serviceId) {
+        setService(null);
+        setLoading(false);
+        return;
+      }
+
+      const services = await fetchPublishedServices();
+      if (cancelled) return;
+
+      const found = services.find((item) => item.id === serviceId) || null;
+      setAllServices(services);
+      setService(found);
+
+      if (found) {
+        loadProjects(found.id, 0, true);
+      } else {
+        setLoading(false);
+      }
     }
+
+    loadService();
+    return () => {
+      cancelled = true;
+    };
   }, [serviceId, loadProjects]);
 
   useEffect(() => {
@@ -57,6 +86,19 @@ export default function ServicePage() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  if (service === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream-100">
+        <SEO
+          title="Service | Cambridge Garden Services"
+          description="Cambridge Garden Services page."
+          noIndex
+        />
+        <Loader2 size={32} className="animate-spin text-forest-600" />
+      </div>
+    );
+  }
 
   if (!service) {
     return (
@@ -76,11 +118,11 @@ export default function ServicePage() {
     );
   }
 
-  const otherServices = servicesList.filter((s) => s.id !== service.id);
+  const otherServices = allServices.filter((s) => s.id !== service.id);
   const seo = serviceSeo(service);
 
   const goToServices = () => {
-    navigate({ pathname: '/', hash: 'services' });
+    navigate('/services');
   };
 
   const handleLoadMore = () => {
@@ -100,7 +142,7 @@ export default function ServicePage() {
           serviceStructuredData(service),
           breadcrumbStructuredData([
             { name: 'Home', path: '/' },
-            { name: 'Services', path: '/#services' },
+            { name: 'Services', path: '/services' },
             { name: service.title, path: seo.path },
           ]),
         ]}
@@ -206,10 +248,13 @@ export default function ServicePage() {
                       {project.description}
                     </p>
                     <div className="mt-8 flex flex-wrap gap-4">
-                      <button className="inline-flex items-center gap-2 rounded-full bg-cream-100 px-6 py-3 font-sans text-sm uppercase tracking-widest-2 text-forest-800 transition-all hover:bg-cream-200">
+                      <Link
+                        to={`/projects/${project.id}`}
+                        className="inline-flex items-center gap-2 rounded-full bg-cream-100 px-6 py-3 font-sans text-sm uppercase tracking-widest-2 text-forest-800 transition-all hover:bg-cream-200"
+                      >
                         <Eye size={16} />
                         View Project
-                      </button>
+                      </Link>
                       <a
                         href="#quote"
                         className="inline-flex items-center gap-2 rounded-full border border-cream-100/30 px-6 py-3 font-sans text-sm uppercase tracking-widest-2 text-cream-50 transition-all hover:bg-cream-100 hover:text-forest-800"

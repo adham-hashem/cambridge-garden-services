@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { services } from '@/data/content';
+import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
 import { fetchPublishedProjects } from '@/lib/projects';
 import type { Project } from '@/types/project';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
@@ -14,6 +15,15 @@ export default function Projects() {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [serviceItems, setServiceItems] = useState<ServiceAdminItem[]>(() =>
+    services.map((service, index) => ({
+      ...service,
+      published: true,
+      sort_order: index * 10,
+      created_at: '',
+      updated_at: '',
+    }))
+  );
 
   const loadProjects = useCallback(async (pageNum: number, replace: boolean) => {
     if (replace) setLoading(true);
@@ -34,6 +44,10 @@ export default function Projects() {
   useEffect(() => {
     loadProjects(0, true);
   }, [loadProjects]);
+
+  useEffect(() => {
+    fetchPublishedServices().then(setServiceItems);
+  }, []);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -69,7 +83,7 @@ export default function Projects() {
           <>
             <div className="space-y-20">
               {projects.map((project, i) => {
-                const service = services.find((s) => s.id === project.service_id);
+                const service = serviceItems.find((s) => s.id === project.service_id);
                 return (
                   <div
                     key={project.id}
@@ -105,6 +119,13 @@ export default function Projects() {
                             View {service.title}
                           </Link>
                         )}
+                        <Link
+                          to={`/projects/${project.id}`}
+                          className="inline-flex items-center gap-2 rounded-full border border-cream-100/30 px-6 py-3 font-sans text-sm uppercase tracking-widest-2 text-cream-50 transition-all hover:bg-cream-100 hover:text-forest-800"
+                        >
+                          <Eye size={16} />
+                          View Project
+                        </Link>
                         <a
                           href="#quote"
                           className="inline-flex items-center gap-2 rounded-full border border-cream-100/30 px-6 py-3 font-sans text-sm uppercase tracking-widest-2 text-cream-50 transition-all hover:bg-cream-100 hover:text-forest-800"

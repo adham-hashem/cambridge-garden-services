@@ -5,7 +5,7 @@ import { FACEBOOK_URL, GOOGLE_BUSINESS_URL } from '@/lib/seo';
 type FooterLink = { label: string; hash?: string; to?: string };
 
 const footerLinks: FooterLink[] = [
-  { label: 'Services', hash: 'services' },
+  { label: 'Services', to: '/services' },
   { label: 'Projects', hash: 'projects' },
   { label: 'About', to: '/about' },
   { label: 'Garden Journal', hash: 'journal' },
@@ -13,8 +13,8 @@ const footerLinks: FooterLink[] = [
 ];
 
 const developerLinks = [
-  { label: '+20 101 398 9517', href: 'https://wa.me/201013989517' },
-  { label: '+20 110 173 3491', href: 'https://wa.me/201101733491' },
+  { label: 'Developer WhatsApp 1', href: 'https://wa.me/201013989517' },
+  { label: 'Developer WhatsApp 2', href: 'https://wa.me/201101733491' },
 ];
 
 export default function Footer() {
@@ -115,20 +115,19 @@ export default function Footer() {
             <p className="mb-4 font-sans text-xs uppercase tracking-widest-2 text-sage-300">
               Developers
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
               {developerLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Contact developer on WhatsApp ${link.label}`}
-                  className="group inline-flex items-center gap-3 rounded-2xl border border-cream-100/10 bg-cream-50/5 px-4 py-3 font-sans text-sm text-cream-100/70 transition-all hover:border-[#25D366]/50 hover:bg-[#25D366]/10 hover:text-cream-50"
+                  aria-label={link.label}
+                  className="group inline-flex h-12 w-12 items-center justify-center rounded-full border border-cream-100/10 bg-cream-50/5 text-cream-100/70 transition-all hover:border-[#25D366]/50 hover:bg-[#25D366]/10 hover:text-cream-50"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition-transform group-hover:scale-105">
                     <WhatsAppIcon />
                   </span>
-                  <span>{link.label}</span>
                 </a>
               ))}
             </div>
