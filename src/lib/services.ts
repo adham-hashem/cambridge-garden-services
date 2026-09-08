@@ -110,9 +110,10 @@ export async function fetchAllServices(
 ): Promise<{ services: ServiceAdminItem[]; total: number }> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (search) params.set('search', search);
+  params.set('resource', 'services');
 
   try {
-    const data = await apiGet<{ services: ServiceAdminItem[]; total: number }>(`/api/admin/services?${params}`);
+    const data = await apiGet<{ services: ServiceAdminItem[]; total: number }>(`/api/admin/projects?${params}`);
     return data;
   } catch (error) {
     console.error('Error fetching admin services:', error);
@@ -122,7 +123,7 @@ export async function fetchAllServices(
 
 export async function createService(input: ServiceInput): Promise<ServiceAdminItem | null> {
   try {
-    const data = await apiSend<{ service: ServiceAdminItem }>('/api/admin/services', 'POST', { input });
+    const data = await apiSend<{ service: ServiceAdminItem }>('/api/admin/projects?resource=services', 'POST', { input });
     return data.service;
   } catch (error) {
     console.error('Error creating service:', error);
@@ -132,7 +133,7 @@ export async function createService(input: ServiceInput): Promise<ServiceAdminIt
 
 export async function updateService(id: string, input: Partial<ServiceInput>): Promise<ServiceAdminItem | null> {
   try {
-    const data = await apiSend<{ service: ServiceAdminItem }>('/api/admin/services', 'PATCH', { id, input });
+    const data = await apiSend<{ service: ServiceAdminItem }>('/api/admin/projects?resource=services', 'PATCH', { id, input });
     return data.service;
   } catch (error) {
     console.error('Error updating service:', error);
@@ -142,7 +143,7 @@ export async function updateService(id: string, input: Partial<ServiceInput>): P
 
 export async function deleteService(id: string): Promise<boolean> {
   try {
-    await apiSend(`/api/admin/services?id=${encodeURIComponent(id)}`, 'DELETE');
+    await apiSend(`/api/admin/projects?resource=services&id=${encodeURIComponent(id)}`, 'DELETE');
     return true;
   } catch (error) {
     console.error('Error deleting service:', error);
@@ -152,7 +153,7 @@ export async function deleteService(id: string): Promise<boolean> {
 
 export async function toggleServicePublished(id: string, published: boolean): Promise<boolean> {
   try {
-    await apiSend('/api/admin/services', 'PATCH', { id, input: { published } });
+    await apiSend('/api/admin/projects?resource=services', 'PATCH', { id, input: { published } });
     return true;
   } catch (error) {
     console.error('Error toggling service:', error);
