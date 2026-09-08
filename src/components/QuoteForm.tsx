@@ -19,15 +19,18 @@ const projectTypes = [
 ];
 
 const budgetRanges = [
+  'Less than £500',
   'Under £1,000',
   '£1,000 – £5,000',
   '£5,000 – £10,000',
   '£10,000 – £25,000',
   '£25,000+',
   'Not sure yet',
+  'Custom Budget',
 ];
 
 const budgetToEstimate: Record<string, number> = {
+  'Less than £500': 400,
   'Under £1,000': 750,
   '£1,000 – £5,000': 3000,
   '£5,000 – £10,000': 7500,
@@ -36,7 +39,14 @@ const budgetToEstimate: Record<string, number> = {
   'Not sure yet': 0,
 };
 
+const CUSTOM_BUDGET_OPTION = 'Custom Budget';
+
 type Status = 'idle' | 'submitting' | 'success' | 'error';
+
+function parseBudgetEstimate(value: string) {
+  const parsed = Number(value.replace(/[^0-9.]/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 export default function QuoteForm() {
   const [status, setStatus] = useState<Status>('idle');
@@ -48,9 +58,13 @@ export default function QuoteForm() {
   const [promoValidating, setPromoValidating] = useState(false);
   const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedBudget, setSelectedBudget] = useState('');
+  const [customBudget, setCustomBudget] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const baseEstimate = selectedBudget ? budgetToEstimate[selectedBudget] || 0 : 0;
+  const isCustomBudget = selectedBudget === CUSTOM_BUDGET_OPTION;
+  const baseEstimate = isCustomBudget
+    ? parseBudgetEstimate(customBudget)
+    : selectedBudget ? budgetToEstimate[selectedBudget] || 0 : 0;
   const discountAmount = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).discountAmount : 0;
   const finalPrice = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).finalPrice : baseEstimate;
 
@@ -95,6 +109,11 @@ export default function QuoteForm() {
     setPromoMessage(null);
   };
 
+  const handleBudgetChange = (value: string) => {
+    setSelectedBudget(value);
+    if (value !== CUSTOM_BUDGET_OPTION) setCustomBudget('');
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -102,7 +121,14 @@ export default function QuoteForm() {
 
     const formData = new FormData(form);
     const budget = String(formData.get('budget') || '');
+    const customBudgetValue = String(formData.get('custom_budget') || '').trim();
+    const savedBudget = budget === CUSTOM_BUDGET_OPTION ? customBudgetValue : budget;
     const projectType = String(formData.get('project_type') || '');
+
+    if (budget === CUSTOM_BUDGET_OPTION && !customBudgetValue) {
+      setStatus('error');
+      return;
+    }
 
     const payload = {
       name: String(formData.get('name') || ''),
@@ -110,7 +136,7 @@ export default function QuoteForm() {
       phone: String(formData.get('phone') || ''),
       address: String(formData.get('address') || ''),
       project_type: projectType,
-      budget: budget || null,
+      budget: savedBudget || null,
       project_details: String(formData.get('project_details') || ''),
       attachment_name: fileName,
       attachment_url: attachmentUrl,
@@ -119,7 +145,6 @@ export default function QuoteForm() {
 
     try {
       await submitQuoteRequest(payload);
-      form.reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
       setStatus('success');
       setFileName(null);
@@ -128,6 +153,7 @@ export default function QuoteForm() {
       setPromoInput('');
       setPromoMessage(null);
       setSelectedBudget('');
+      setCustomBudget('');
     } catch (err) {
       console.error('Quote submission failed', err);
       setStatus('error');
@@ -198,9 +224,26 @@ export default function QuoteForm() {
               label="Budget"
               name="budget"
               options={budgetRanges}
-              onChange={(v) => setSelectedBudget(v)}
+              onChange={handleBudgetChange}
             />
           </div>
+          {isCustomBudget && (
+            <div>
+              <label className="mb-2 block font-sans text-xs uppercase tracking-widest-2 text-forest-700">
+                Custom Budget
+              </label>
+              <input
+                type="text"
+                name="custom_budget"
+                value={customBudget}
+                onChange={(e) => setCustomBudget(e.target.value)}
+                required
+                inputMode="decimal"
+                placeholder="Enter your exact budget"
+                className="w-full rounded-xl border border-sage-300/40 bg-cream-100/50 px-4 py-3 font-sans text-sm text-forest-800 placeholder-forest-700/30 outline-none transition-colors focus:border-forest-500 focus:bg-cream-50"
+              />
+            </div>
+          )}
           <div>
             <label className="mb-2 block font-sans text-xs uppercase tracking-widest-2 text-forest-700">
               Project Details
@@ -251,7 +294,7 @@ export default function QuoteForm() {
               Promo Code
             </label>
             {!appliedPromo ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row">
                 <input
                   type="text"
                   value={promoInput}
@@ -263,7 +306,7 @@ export default function QuoteForm() {
                   type="button"
                   onClick={handleApplyPromo}
                   disabled={promoValidating || !promoInput.trim()}
-                  className="flex items-center gap-2 rounded-lg bg-forest-700 px-5 py-2.5 font-sans text-sm text-cream-50 transition-all hover:bg-forest-800 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-lg bg-forest-700 px-5 py-2.5 font-sans text-sm text-cream-50 transition-all hover:bg-forest-800 disabled:opacity-50"
                 >
                   {promoValidating ? <Loader2 size={14} className="animate-spin" /> : null}
                   Apply

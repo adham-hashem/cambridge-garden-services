@@ -128,12 +128,6 @@ export default function ServicePage() {
             <ArrowLeft size={14} />
             All Services
           </button>
-          <p
-            className="opacity-0 animate-fade-in font-sans text-xs uppercase tracking-widest-2 text-cream-200/80 mb-4"
-            style={{ animationDelay: '0.3s' }}
-          >
-            Cambridge · England
-          </p>
           <h1
             className="opacity-0 animate-fade-up font-serif text-5xl font-light leading-tight text-cream-50 text-balance sm:text-6xl md:text-7xl"
             style={{ animationDelay: '0.5s' }}

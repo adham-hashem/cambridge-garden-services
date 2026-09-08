@@ -90,9 +90,6 @@ export default function Footer() {
           <p className="font-sans text-xs text-cream-200/40">
             © {new Date().getFullYear()} Cambridge Garden Services. All rights reserved.
           </p>
-          <p className="font-sans text-xs text-cream-200/40">
-            Cambridge · England
-          </p>
         </div>
       </div>
     </footer>

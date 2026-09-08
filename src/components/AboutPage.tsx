@@ -119,9 +119,11 @@ export default function AboutPage() {
             <div className="relative mx-auto max-w-3xl rounded-2xl bg-cream-50/5 p-4 shadow-2xl shadow-black/30 sm:p-8">
               <div className="overflow-hidden rounded-xl bg-black">
                 <img
-                  src="/images/image.png"
+                  src="/quality_image.webp"
                   alt="Quality Business Awards 2024 recognition for Cambridge Garden Services Ltd"
                   className="h-auto w-full object-contain"
+                  loading="eager"
+                  decoding="async"
                 />
               </div>
               <p className="mt-5 text-center font-sans text-xs uppercase tracking-widest-2 text-cream-100/45">

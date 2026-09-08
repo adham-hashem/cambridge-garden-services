@@ -32,17 +32,9 @@ export default function Hero() {
       </div>
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center pt-20 sm:pt-0">
-        <div
-          className="opacity-0 animate-fade-in"
-          style={{ animationDelay: '0.3s' }}
-        >
-          <p className="mb-5 font-sans text-[10px] uppercase tracking-widest-2 text-cream-200/80 sm:mb-6 sm:text-xs">
-            Cambridge · England
-          </p>
-        </div>
-
         <h1
-          className="opacity-0 animate-fade-up font-serif text-4xl font-light leading-[1.1] text-cream-50 text-balance sm:text-6xl md:text-7xl lg:text-8xl"
+          aria-label="Cambridge Garden Services"
+          className="opacity-0 animate-fade-up font-serif text-[2.625rem] font-light leading-[1.04] text-cream-50 text-balance min-[375px]:text-5xl sm:text-6xl sm:leading-[1.1] md:text-7xl lg:text-8xl"
           style={{ animationDelay: '0.6s' }}
         >
           Cambridge Garden
