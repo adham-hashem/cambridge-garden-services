@@ -1,6 +1,6 @@
 import { ExternalLink, Mail, MapPin, Phone, Star } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FACEBOOK_URL, GOOGLE_BUSINESS_URL } from '@/lib/seo';
+import { FACEBOOK_URL, GOOGLE_BUSINESS_URL, YELL_URL } from '@/lib/seo';
 
 type FooterLink = { label: string; hash?: string; to?: string };
 
@@ -65,6 +65,15 @@ export default function Footer() {
               >
                 Review us on Google
                 <Star size={13} />
+              </a>
+              <a
+                href={YELL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-cream-100/15 px-4 py-2.5 font-sans text-xs text-cream-100/75 transition-colors hover:border-sage-300/50 hover:text-cream-50"
+              >
+                Yell
+                <ExternalLink size={13} />
               </a>
             </div>
           </div>

@@ -8,6 +8,7 @@ import AboutPage from '@/components/AboutPage';
 import ClimatePage from '@/components/ClimatePage';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import NotFoundPage from '@/components/NotFoundPage';
+import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 import { AuthProvider } from '@/hooks/useAuth';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           <Route path="/admin/:tab" element={<AdminDashboard />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <FloatingWhatsApp />
       </AuthProvider>
     </BrowserRouter>
   );
