@@ -2,6 +2,7 @@ import type { ApiRequest, ApiResponse } from './_lib/types.js';
 import { assertMethod, assertSameOrigin, getBody, optionalString, requireString, sendError, sendJson } from './_lib/http.js';
 import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 import { notifyBookingCreated } from './_lib/telegram.js';
+import { notifyBookingEmail } from './_lib/resend.js';
 
 const serviceIdMap: Record<string, string> = {
   'Garden Design': 'garden-design',
@@ -70,7 +71,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       p_promo_code: promoCode,
     };
 
-    const { error } = await supabaseAdmin.rpc('submit_quote_request', payload);
+    const { data: quoteId, error } = await supabaseAdmin.rpc('submit_quote_request', payload);
     if (error) {
       if (error.message.includes('Promo code is not valid')) {
         sendJson(res, 400, { error: 'Promo code is not valid' });
@@ -79,7 +80,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       throw error;
     }
 
-    await notifyBookingCreated({
+    const bookingNotification = {
+      id: typeof quoteId === 'string' ? quoteId : null,
       name,
       email,
       phone: payload.p_phone,
@@ -89,7 +91,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       projectDetails,
       attachmentUrl: payload.p_attachment_url,
       promoCode,
-    });
+    };
+
+    await Promise.all([
+      notifyBookingCreated(bookingNotification),
+      notifyBookingEmail(bookingNotification),
+    ]);
 
     sendJson(res, 201, { ok: true });
   } catch (error) {

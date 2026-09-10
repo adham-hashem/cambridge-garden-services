@@ -38,6 +38,9 @@ ADMIN_SESSION_SECRET
 SITE_ORIGIN
 TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID
+RESEND_API_KEY
+RESEND_FROM_EMAIL
+BOOKING_EMAIL_TO
 ```
 
 `ADMIN_USERNAME` and `ADMIN_PASSWORD` are the static admin credentials. Change them in Vercel without changing code.
@@ -52,6 +55,8 @@ If admin login returns `500`, verify these variables exist in the deployed Verce
 - `SITE_ORIGIN` as a full URL, for example `https://cambridge-garden-services.vercel.app`
 
 `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` enable booking notifications to Telegram. Keep the bot token server-only in Vercel; never commit it to the repo.
+
+`RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `BOOKING_EMAIL_TO` enable booking notifications by email through Resend. `RESEND_FROM_EMAIL` must use a sender/domain verified in Resend, for example `Cambridge Garden Services <bookings@cambridgegardenservices.co.uk>`. `BOOKING_EMAIL_TO` can contain one email or multiple comma-separated emails.
 
 ## Supabase Migrations Through GitHub Actions
 
