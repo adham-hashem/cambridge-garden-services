@@ -85,16 +85,16 @@ export default function Footer() {
               Get in Touch
             </p>
             <ul className="space-y-3 font-sans text-sm font-light text-cream-200/60">
-              <li className="flex items-center gap-3">
-                <Phone size={16} className="text-sage-400" />
+              <li className="flex items-start gap-3">
+                <Phone size={16} className="shrink-0 mt-0.5 text-sage-400" />
                 07814 584 119
               </li>
-              <li className="flex items-center gap-3">
-                <Mail size={16} className="text-sage-400" />
-                info@cambridgegardenservices.co.uk
+              <li className="flex items-start gap-3">
+                <Mail size={16} className="shrink-0 mt-0.5 text-sage-400" />
+                <span className="break-all">info@cambridgegardenservices.co.uk</span>
               </li>
-              <li className="flex items-center gap-3">
-                <MapPin size={16} className="text-sage-400" />
+              <li className="flex items-start gap-3">
+                <MapPin size={16} className="shrink-0 mt-0.5 text-sage-400" />
                 Cambridge, UK
               </li>
             </ul>
