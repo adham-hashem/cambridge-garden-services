@@ -72,7 +72,7 @@ export function localBusinessStructuredData() {
     image: DEFAULT_IMAGE,
     logo: DEFAULT_IMAGE,
     description: pageSeo.home.description,
-    telephone: ['+441223864703', '+447814584119'],
+    telephone: ['+447814584119'],
     email: 'info@cambridgegardenservices.co.uk',
     priceRange: '$$',
     sameAs: [FACEBOOK_URL, GOOGLE_BUSINESS_URL, YELL_URL],

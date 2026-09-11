@@ -17,7 +17,6 @@ import { localBusinessStructuredData, pageSeo } from '@/lib/seo';
 const contactDetails = [
   { icon: MapPin, label: 'Based in', value: 'Cambridge, UK' },
   { icon: Phone, label: 'Mobile', value: '07814 584 119', href: 'tel:07814584119' },
-  { icon: Phone, label: 'Phone', value: '01223 864 703', href: 'tel:01223864703' },
   { icon: Mail, label: 'Email', value: 'info@cambridgegardenservices.co.uk', href: 'mailto:info@cambridgegardenservices.co.uk' },
   { icon: MapPin, label: 'Serving', value: 'Cambridge and surrounding villages' },
   { icon: Clock3, label: 'Open', value: 'Monday–Sunday, 8:00 AM–8:00 PM' },

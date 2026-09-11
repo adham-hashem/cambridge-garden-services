@@ -90,10 +90,6 @@ export default function Footer() {
                 07814 584 119
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={16} className="text-sage-400" />
-                01223 864 703
-              </li>
-              <li className="flex items-center gap-3">
                 <Mail size={16} className="text-sage-400" />
                 info@cambridgegardenservices.co.uk
               </li>
