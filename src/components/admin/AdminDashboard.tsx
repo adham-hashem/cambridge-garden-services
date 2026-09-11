@@ -9,6 +9,8 @@ import BookingsPanel from '@/components/admin/BookingsPanel';
 import PromoCodesPanel from '@/components/admin/PromoCodesPanel';
 import ArticlesPanel from '@/components/admin/ArticlesPanel';
 import ClimatePanel from '@/components/admin/ClimatePanel';
+import TestimonialsPanel from '@/components/admin/TestimonialsPanel';
+import InspirationPanel from '@/components/admin/InspirationPanel';
 import {
   LogOut,
   Loader2,
@@ -19,14 +21,18 @@ import {
   TicketPercent,
   Newspaper,
   Leaf,
+  MessageSquareQuote,
+  Compass,
 } from 'lucide-react';
 
-type Tab = 'bookings' | 'services' | 'projects' | 'promos' | 'articles' | 'climate';
+type Tab = 'bookings' | 'services' | 'projects' | 'inspiration' | 'testimonials' | 'promos' | 'articles' | 'climate';
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarCheck }[] = [
   { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
   { id: 'services', label: 'Services', icon: ListTree },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'inspiration', label: 'Inspiration', icon: Compass },
+  { id: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote },
   { id: 'promos', label: 'Promo Codes', icon: TicketPercent },
   { id: 'articles', label: 'Articles', icon: Newspaper },
   { id: 'climate', label: 'Climate', icon: Leaf },
@@ -118,6 +124,8 @@ export default function AdminDashboard() {
         {activeTab === 'bookings' && <BookingsPanel />}
         {activeTab === 'services' && <ServicesPanel />}
         {activeTab === 'projects' && <ProjectsPanel />}
+        {activeTab === 'inspiration' && <InspirationPanel />}
+        {activeTab === 'testimonials' && <TestimonialsPanel />}
         {activeTab === 'promos' && <PromoCodesPanel />}
         {activeTab === 'articles' && <ArticlesPanel />}
         {activeTab === 'climate' && <ClimatePanel />}

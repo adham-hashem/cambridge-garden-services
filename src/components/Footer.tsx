@@ -6,7 +6,9 @@ type FooterLink = { label: string; hash?: string; to?: string };
 
 const footerLinks: FooterLink[] = [
   { label: 'Services', to: '/services' },
+  { label: 'Garden Inspiration', to: '/inspiration' },
   { label: 'Projects', hash: 'projects' },
+  { label: 'Testimonials', to: '/testimonials' },
   { label: 'About', to: '/about' },
   { label: 'Garden Journal', hash: 'journal' },
   { label: 'Request a Quote', hash: 'quote' },

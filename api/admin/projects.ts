@@ -68,6 +68,46 @@ const serviceFields: (keyof ServiceInput)[] = [
   'sort_order',
 ];
 
+type TestimonialInput = {
+  name: string;
+  rating: number;
+  comment: string;
+  customer_photo?: string;
+  customer_photo_alt?: string;
+  published?: boolean;
+  sort_order?: number;
+};
+
+type InspirationInput = {
+  title: string;
+  description: string;
+  image: string;
+  alt?: string;
+  service_id: string;
+  published?: boolean;
+  sort_order?: number;
+};
+
+const testimonialFields: (keyof TestimonialInput)[] = [
+  'name',
+  'rating',
+  'comment',
+  'customer_photo',
+  'customer_photo_alt',
+  'published',
+  'sort_order',
+];
+
+const inspirationFields: (keyof InspirationInput)[] = [
+  'title',
+  'description',
+  'image',
+  'alt',
+  'service_id',
+  'published',
+  'sort_order',
+];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -143,6 +183,83 @@ function normalizeService(input: Partial<ServiceInput>, partial = false): Partia
   return output;
 }
 
+function normalizeTestimonial(input: Partial<TestimonialInput>, partial = false): Partial<TestimonialInput> {
+  const picked = pick<TestimonialInput>(input as Record<string, unknown>, testimonialFields);
+  const output: Partial<TestimonialInput> = {};
+
+  for (const field of ['name', 'comment'] as const) {
+    if (!partial && typeof picked[field] !== 'string') throw new Error(`${field} is required`);
+    if (typeof picked[field] === 'string') {
+      const val = picked[field]!.trim().slice(0, field === 'comment' ? 4000 : 200);
+      if (!partial && !val) throw new Error(`${field} is required`);
+      output[field] = val;
+    }
+  }
+
+  for (const field of ['customer_photo', 'customer_photo_alt'] as const) {
+    if (typeof picked[field] === 'string') {
+      output[field] = picked[field]!.trim().slice(0, 1200);
+    } else if (!partial) {
+      output[field] = '';
+    }
+  }
+
+  if (picked.rating !== undefined) {
+    const r = Math.max(1, Math.min(5, Math.round(Number(picked.rating) || 5)));
+    output.rating = r;
+  } else if (!partial) {
+    output.rating = 5;
+  }
+
+  if (typeof picked.published === 'boolean') {
+    output.published = picked.published;
+  } else if (!partial) {
+    output.published = true;
+  }
+
+  if (picked.sort_order !== undefined) {
+    output.sort_order = Number(picked.sort_order) || 0;
+  } else if (!partial) {
+    output.sort_order = 0;
+  }
+
+  return output;
+}
+
+function normalizeInspiration(input: Partial<InspirationInput>, partial = false): Partial<InspirationInput> {
+  const picked = pick<InspirationInput>(input as Record<string, unknown>, inspirationFields);
+  const output: Partial<InspirationInput> = {};
+
+  for (const field of ['title', 'description', 'image', 'service_id'] as const) {
+    if (!partial && typeof picked[field] !== 'string') throw new Error(`${field} is required`);
+    if (typeof picked[field] === 'string') {
+      const val = picked[field]!.trim().slice(0, field === 'description' ? 4000 : 1200);
+      if (!partial && !val) throw new Error(`${field} is required`);
+      output[field] = val;
+    }
+  }
+
+  if (typeof picked.alt === 'string') {
+    output.alt = picked.alt.trim().slice(0, 500);
+  } else if (!partial) {
+    output.alt = '';
+  }
+
+  if (typeof picked.published === 'boolean') {
+    output.published = picked.published;
+  } else if (!partial) {
+    output.published = true;
+  }
+
+  if (picked.sort_order !== undefined) {
+    output.sort_order = Number(picked.sort_order) || 0;
+  } else if (!partial) {
+    output.sort_order = 0;
+  }
+
+  return output;
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     assertMethod(req, ['GET', 'POST', 'PATCH', 'DELETE']);
@@ -210,6 +327,120 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       const { data, error } = await supabaseAdmin.from('services').update(input).eq('id', body.id).select('*').single();
       if (error) throw error;
       sendJson(res, 200, { service: toPublicService(data) });
+      return;
+    }
+
+    if (resource === 'testimonials') {
+      if (req.method === 'GET') {
+        const { page, pageSize, from, to } = getPagination(req);
+        const search = cleanSearch(getQueryString(req.query.search));
+        const rating = getQueryString(req.query.rating);
+        const published = getQueryString(req.query.published);
+
+        let query = supabaseAdmin
+          .from('testimonials')
+          .select('*', { count: 'exact' })
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (search) query = query.or(`name.ilike.%${search}%,comment.ilike.%${search}%`);
+        if (rating) query = query.eq('rating', Number(rating));
+        if (published === 'true' || published === 'false') query = query.eq('published', published === 'true');
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+        sendJson(res, 200, { testimonials: data || [], total: count || 0, page, pageSize });
+        return;
+      }
+
+      if (req.method === 'DELETE') {
+        const id = getQueryString(req.query.id);
+        if (!id) {
+          sendJson(res, 400, { error: 'Testimonial id is required' });
+          return;
+        }
+
+        const { error } = await supabaseAdmin.from('testimonials').delete().eq('id', id);
+        if (error) throw error;
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      const body = getBody<{ id?: unknown; input?: Partial<TestimonialInput> }>(req);
+      const input = normalizeTestimonial((body.input || body) as Partial<TestimonialInput>, req.method === 'PATCH');
+
+      if (req.method === 'POST') {
+        const { data, error } = await supabaseAdmin.from('testimonials').insert(input).select('*').single();
+        if (error) throw error;
+        sendJson(res, 201, { testimonial: data });
+        return;
+      }
+
+      if (typeof body.id !== 'string' || !body.id) {
+        sendJson(res, 400, { error: 'Testimonial id is required' });
+        return;
+      }
+      const { data, error } = await supabaseAdmin.from('testimonials').update(input).eq('id', body.id).select('*').single();
+      if (error) throw error;
+      sendJson(res, 200, { testimonial: data });
+      return;
+    }
+
+    if (resource === 'inspiration') {
+      if (req.method === 'GET') {
+        const { page, pageSize, from, to } = getPagination(req);
+        const search = cleanSearch(getQueryString(req.query.search));
+        const serviceId = getQueryString(req.query.serviceId);
+        const published = getQueryString(req.query.published);
+
+        let query = supabaseAdmin
+          .from('garden_inspirations')
+          .select('*', { count: 'exact' })
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+        if (serviceId) query = query.eq('service_id', serviceId);
+        if (published === 'true' || published === 'false') query = query.eq('published', published === 'true');
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+        sendJson(res, 200, { inspirations: data || [], total: count || 0, page, pageSize });
+        return;
+      }
+
+      if (req.method === 'DELETE') {
+        const id = getQueryString(req.query.id);
+        if (!id) {
+          sendJson(res, 400, { error: 'Inspiration id is required' });
+          return;
+        }
+
+        const { error } = await supabaseAdmin.from('garden_inspirations').delete().eq('id', id);
+        if (error) throw error;
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      const body = getBody<{ id?: unknown; input?: Partial<InspirationInput> }>(req);
+      const input = normalizeInspiration((body.input || body) as Partial<InspirationInput>, req.method === 'PATCH');
+
+      if (req.method === 'POST') {
+        const { data, error } = await supabaseAdmin.from('garden_inspirations').insert(input).select('*').single();
+        if (error) throw error;
+        sendJson(res, 201, { inspiration: data });
+        return;
+      }
+
+      if (typeof body.id !== 'string' || !body.id) {
+        sendJson(res, 400, { error: 'Inspiration id is required' });
+        return;
+      }
+      const { data, error } = await supabaseAdmin.from('garden_inspirations').update(input).eq('id', body.id).select('*').single();
+      if (error) throw error;
+      sendJson(res, 200, { inspiration: data });
       return;
     }
 

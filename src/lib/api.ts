@@ -43,23 +43,35 @@ function assertUploadableImage(file: File) {
   }
 }
 
-export async function uploadImage(file: File, folder: 'bookings' | 'before' | 'after' | 'articles' | 'climate' | 'services') {
+export type UploadFolder = 'bookings' | 'before' | 'after' | 'articles' | 'climate' | 'services' | 'testimonials' | 'inspiration';
+
+export async function uploadImage(file: File, folder: UploadFolder): Promise<string> {
   assertUploadableImage(file);
 
-  const signed = await apiSend<{ path: string; token: string }>('/api/uploads', 'POST', {
-    folder,
-    filename: file.name,
-    contentType: file.type,
-  });
+  try {
+    const signed = await apiSend<{ path: string; token: string }>('/api/uploads', 'POST', {
+      folder,
+      filename: file.name,
+      contentType: file.type,
+    });
 
-  const { error } = await supabase.storage
-    .from('project-images')
-    .uploadToSignedUrl(signed.path, signed.token, file);
+    const { error } = await supabase.storage
+      .from('project-images')
+      .uploadToSignedUrl(signed.path, signed.token, file);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const { data } = supabase.storage.from('project-images').getPublicUrl(signed.path);
-  return data.publicUrl;
+    const { data } = supabase.storage.from('project-images').getPublicUrl(signed.path);
+    return data.publicUrl;
+  } catch (error) {
+    console.warn('Backend upload unavailable, using client fallback:', error);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+  }
 }
 
 export async function deleteImageByPath(path: string) {

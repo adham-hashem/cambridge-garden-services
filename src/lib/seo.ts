@@ -24,6 +24,16 @@ export const pageSeo = {
     description:
       'Plan a resilient Cambridge garden with drought-aware planting, better drainage, shade, biodiversity and practical climate-ready garden design.',
   },
+  testimonials: {
+    title: 'Client Testimonials | Cambridge Garden Services',
+    description:
+      'Read genuine reviews from homeowners across Cambridge. Discover our high-quality landscaping, paving, fencing, and garden transformations.',
+  },
+  inspiration: {
+    title: 'Garden Inspiration & Materials | Cambridge Garden Services',
+    description:
+      'Explore standalone project features, paving, timber fencing, turfing, and landscaping materials crafted by Cambridge Garden Services.',
+  },
   admin: {
     title: 'Admin Dashboard | Cambridge Garden Services',
     description: 'Private administration area for Cambridge Garden Services.',

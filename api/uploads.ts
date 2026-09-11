@@ -4,8 +4,8 @@ import { assertMethod, assertSameOrigin, getBody, sendError, sendJson } from './
 import { isAuthenticated, requireAdmin } from './_lib/auth.js';
 import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 
-const publicFolders = new Set(['bookings']);
-const adminFolders = new Set(['before', 'after', 'articles', 'climate', 'services']);
+const publicFolders = new Set(['bookings', 'testimonials']);
+const adminFolders = new Set(['before', 'after', 'articles', 'climate', 'services', 'inspiration', 'testimonials']);
 const imageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 function extensionFor(filename: string, contentType: string) {

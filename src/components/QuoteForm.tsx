@@ -49,9 +49,29 @@ function parseBudgetEstimate(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export default function QuoteForm() {
+export interface QuoteFormProps {
+  initialProjectType?: string;
+  initialProjectDetails?: string;
+  initialItemName?: string;
+  isModal?: boolean;
+  onClose?: () => void;
+  title?: string;
+  subtitle?: string;
+}
+
+export default function QuoteForm({
+  initialProjectType,
+  initialProjectDetails,
+  initialItemName,
+  isModal = false,
+  onClose,
+  title,
+  subtitle,
+}: QuoteFormProps = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [projectTypeOptions, setProjectTypeOptions] = useState(projectTypes);
+  const [selectedProjectType, setSelectedProjectType] = useState(initialProjectType || '');
+  const [projectDetails, setProjectDetails] = useState(initialProjectDetails || '');
   const [fileName, setFileName] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -62,6 +82,14 @@ export default function QuoteForm() {
   const [selectedBudget, setSelectedBudget] = useState('');
   const [customBudget, setCustomBudget] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialProjectType) setSelectedProjectType(initialProjectType);
+  }, [initialProjectType]);
+
+  useEffect(() => {
+    if (initialProjectDetails) setProjectDetails(initialProjectDetails);
+  }, [initialProjectDetails]);
 
   const isCustomBudget = selectedBudget === CUSTOM_BUDGET_OPTION;
   const displayBudget = isCustomBudget ? customBudget.trim() : selectedBudget;
@@ -180,6 +208,46 @@ export default function QuoteForm() {
   };
 
   if (status === 'success') {
+    if (isModal) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-3xl bg-cream-50 p-8 sm:p-12 text-center shadow-2xl border border-sage-200">
+            {onClose && (
+              <button
+                onClick={onClose}
+                type="button"
+                className="absolute top-5 right-5 p-2 text-forest-600 hover:text-forest-900 rounded-full hover:bg-cream-200/80 transition-colors"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            )}
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-sage-400/20">
+              <Check size={32} className="text-forest-700" />
+            </div>
+            <h2 className="font-serif text-3xl font-light text-forest-900 sm:text-4xl">
+              Thank you.
+            </h2>
+            <p className="mt-4 font-sans text-base font-light text-forest-700/80 leading-relaxed">
+              Your request has reached us. We will be in touch within two working days to talk about
+              your garden.
+            </p>
+            <div className="mt-8 flex justify-center gap-3">
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  type="button"
+                  className="rounded-full bg-forest-800 px-8 py-3 font-sans text-xs uppercase tracking-widest-2 text-cream-50 hover:bg-forest-900 transition-colors"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <section id="quote" className="relative bg-forest-800 py-24 lg:py-32">
         <div className="mx-auto max-w-2xl px-6 text-center">
@@ -204,26 +272,11 @@ export default function QuoteForm() {
     );
   }
 
-  return (
-    <section id="quote" className="relative bg-forest-800 py-24 lg:py-32">
-      <div className="mx-auto max-w-3xl px-6 lg:px-10">
-        <div className="mb-12 text-center">
-          <p className="reveal font-sans text-xs uppercase tracking-widest-2 text-sage-300 mb-6">
-            Start Your Project
-          </p>
-          <h2 className="reveal reveal-delay-1 font-serif text-4xl font-light text-cream-50 sm:text-5xl md:text-6xl">
-            Ready to <span className="italic">Step Outside?</span>
-          </h2>
-          <p className="reveal reveal-delay-2 mx-auto mt-6 max-w-lg font-sans text-base font-light text-cream-200/60">
-            Tell us about your garden and what you hope it might become. We will reply within two
-            working days.
-          </p>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="reveal reveal-delay-3 space-y-6 rounded-3xl bg-cream-50 p-8 lg:p-12"
-        >
+  const formJsx = (
+    <form
+      onSubmit={handleSubmit}
+      className={`space-y-6 ${isModal ? 'p-2' : 'reveal reveal-delay-3 rounded-3xl bg-cream-50 p-8 lg:p-12'}`}
+    >
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Name" name="name" required />
             <Field label="Email" name="email" type="email" required />
@@ -237,6 +290,8 @@ export default function QuoteForm() {
               label="Project Type"
               name="project_type"
               options={projectTypeOptions}
+              value={selectedProjectType}
+              onChange={(val) => setSelectedProjectType(val)}
               required
             />
             <SelectField
@@ -271,6 +326,8 @@ export default function QuoteForm() {
               name="project_details"
               rows={4}
               required
+              value={projectDetails}
+              onChange={(e) => setProjectDetails(e.target.value)}
               className="w-full resize-none rounded-xl border border-sage-300/40 bg-cream-100/50 px-4 py-3 font-sans text-sm text-forest-800 placeholder-forest-700/30 outline-none transition-colors focus:border-forest-500 focus:bg-cream-50"
               placeholder="Tell us about your garden, what you want to change, and how you hope to use the space..."
             />
@@ -408,6 +465,55 @@ export default function QuoteForm() {
             )}
           </button>
         </form>
+  );
+
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-8 bg-cream-50 rounded-3xl p-6 sm:p-10 shadow-2xl border border-sage-200 max-h-[90vh] overflow-y-auto">
+          {onClose && (
+            <button
+              onClick={onClose}
+              type="button"
+              className="absolute top-5 right-5 p-2 text-forest-600 hover:text-forest-900 rounded-full hover:bg-cream-200/80 transition-colors z-10"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          )}
+          <div className="mb-8 text-center pr-6 sm:pr-0">
+            <p className="font-sans text-xs uppercase tracking-widest-2 text-sage-600 mb-2">
+              {initialItemName ? `Inquiry: ${initialItemName}` : 'Start Your Project'}
+            </p>
+            <h2 className="font-serif text-3xl font-light text-forest-900 sm:text-4xl">
+              {title || 'Request a Quote'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg font-sans text-sm font-light text-forest-700/70">
+              {subtitle || 'Tell us about your garden and what you hope it might become. We will reply within two working days.'}
+            </p>
+          </div>
+          {formJsx}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <section id="quote" className="relative bg-forest-800 py-24 lg:py-32">
+      <div className="mx-auto max-w-3xl px-6 lg:px-10">
+        <div className="mb-12 text-center">
+          <p className="reveal font-sans text-xs uppercase tracking-widest-2 text-sage-300 mb-6">
+            Start Your Project
+          </p>
+          <h2 className="reveal reveal-delay-1 font-serif text-4xl font-light text-cream-50 sm:text-5xl md:text-6xl">
+            Ready to <span className="italic">Step Outside?</span>
+          </h2>
+          <p className="reveal reveal-delay-2 mx-auto mt-6 max-w-lg font-sans text-base font-light text-cream-200/60">
+            Tell us about your garden and what you hope it might become. We will reply within two
+            working days.
+          </p>
+        </div>
+        {formJsx}
       </div>
     </section>
   );
@@ -444,12 +550,14 @@ function SelectField({
   name,
   options,
   required = false,
+  value,
   onChange,
 }: {
   label: string;
   name: string;
   options: string[];
   required?: boolean;
+  value?: string;
   onChange?: (value: string) => void;
 }) {
   return (
@@ -460,7 +568,8 @@ function SelectField({
       <select
         name={name}
         required={required}
-        defaultValue=""
+        value={value !== undefined ? value : undefined}
+        defaultValue={value === undefined ? '' : undefined}
         onChange={(e) => onChange?.(e.target.value)}
         className="w-full rounded-xl border border-sage-300/40 bg-cream-100/50 px-4 py-3 font-sans text-sm text-forest-800 outline-none transition-colors focus:border-forest-500 focus:bg-cream-50"
       >

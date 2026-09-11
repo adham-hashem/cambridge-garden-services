@@ -7,6 +7,8 @@ import ArticlePage from '@/components/ArticlePage';
 import AboutPage from '@/components/AboutPage';
 import ClimatePage from '@/components/ClimatePage';
 import AdminDashboard from '@/components/admin/AdminDashboard';
+import TestimonialsPage from '@/components/TestimonialsPage';
+import InspirationPage from '@/components/InspirationPage';
 import NotFoundPage from '@/components/NotFoundPage';
 import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -20,6 +22,8 @@ function App() {
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:serviceId" element={<ServicePage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
+          <Route path="/inspiration" element={<InspirationPage />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
           <Route path="/journal/:id" element={<ArticlePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/climate-ready" element={<ClimatePage />} />
