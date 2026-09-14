@@ -1,6 +1,8 @@
 import { useLocation } from 'react-router-dom';
+import { Mail } from 'lucide-react';
 
 const WHATSAPP_URL = 'https://wa.me/447814584119';
+const EMAIL_URL = 'mailto:info@cambridgegardenservices.co.uk';
 
 export default function FloatingWhatsApp() {
   const location = useLocation();
@@ -8,15 +10,24 @@ export default function FloatingWhatsApp() {
   if (location.pathname.startsWith('/admin')) return null;
 
   return (
-    <a
-      href={WHATSAPP_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Contact Cambridge Garden Services on WhatsApp"
-      className="fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl shadow-forest-950/30 ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1 hover:bg-[#20bd5a] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
-    >
-      <WhatsAppIcon />
-    </a>
+    <div className="fixed bottom-5 right-5 z-[60] flex flex-col items-center gap-2 sm:bottom-6 sm:right-6">
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Contact Cambridge Garden Services on WhatsApp"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl shadow-forest-950/30 ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1 hover:bg-[#20bd5a] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 sm:h-16 sm:w-16"
+      >
+        <WhatsAppIcon />
+      </a>
+      <a
+        href={EMAIL_URL}
+        aria-label="Email Cambridge Garden Services"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-cream-50/95 text-forest-800 shadow-2xl shadow-forest-950/20 ring-1 ring-forest-800/10 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:bg-cream-100 focus:outline-none focus:ring-4 focus:ring-sage-300/35 sm:h-16 sm:w-16"
+      >
+        <Mail size={26} strokeWidth={1.8} className="sm:h-7 sm:w-7" />
+      </a>
+    </div>
   );
 }
 
