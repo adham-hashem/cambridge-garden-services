@@ -69,7 +69,7 @@ function mergeWithDefaults(records: ServiceRecord[]): ServiceAdminItem[] {
   records.forEach((row) => byId.set(row.id, fromRecord(row)));
   return Array.from(byId.values())
     .filter((service) => service.published)
-    .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+    .sort((a, b) => a.sort_order - b.sort_order);
 }
 
 export function slugifyServiceId(value: string) {
@@ -87,8 +87,7 @@ export async function fetchPublishedServices(): Promise<ServiceAdminItem[]> {
     .from('services')
     .select('*')
     .eq('published', true)
-    .order('sort_order', { ascending: true })
-    .order('title', { ascending: true });
+    .order('sort_order', { ascending: true });
 
   if (error) {
     console.error('Error fetching services:', error.message);

@@ -276,7 +276,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           .from('services')
           .select('*', { count: 'exact' })
           .order('sort_order', { ascending: true })
-          .order('title', { ascending: true })
           .range(from, to);
 
         if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
