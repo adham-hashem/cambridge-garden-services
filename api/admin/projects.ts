@@ -315,7 +315,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       if (req.method === 'POST') {
         const { data, error } = await supabaseAdmin.from('services').insert(input).select('*').single();
         if (error) throw error;
-        sendJson(res, 201, { service: toPublicService(data) });
+        const { error: reorderError } = await supabaseAdmin.rpc('reorder_service', {
+          p_service_id: data.id,
+          p_position: input.sort_order ?? 0,
+        });
+        if (reorderError) throw reorderError;
+        const { data: ordered, error: readError } = await supabaseAdmin.from('services').select('*').eq('id', data.id).single();
+        if (readError) throw readError;
+        sendJson(res, 201, { service: toPublicService(ordered) });
         return;
       }
 
@@ -323,9 +330,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         sendJson(res, 400, { error: 'Service id is required' });
         return;
       }
-      const { data, error } = await supabaseAdmin.from('services').update(input).eq('id', body.id).select('*').single();
+      const { sort_order: position, ...fieldsToUpdate } = input;
+      const { data, error } = await supabaseAdmin.from('services').update(fieldsToUpdate).eq('id', body.id).select('*').single();
       if (error) throw error;
-      sendJson(res, 200, { service: toPublicService(data) });
+      if (position !== undefined) {
+        const { error: reorderError } = await supabaseAdmin.rpc('reorder_service', {
+          p_service_id: body.id,
+          p_position: position,
+        });
+        if (reorderError) throw reorderError;
+      }
+      const { data: ordered, error: readError } = await supabaseAdmin.from('services').select('*').eq('id', data.id).single();
+      if (readError) throw readError;
+      sendJson(res, 200, { service: toPublicService(ordered) });
       return;
     }
 
