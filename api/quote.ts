@@ -2,7 +2,7 @@ import type { ApiRequest, ApiResponse } from './_lib/types.js';
 import { assertMethod, assertSameOrigin, getBody, optionalString, requireString, sendError, sendJson } from './_lib/http.js';
 import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 import { notifyBookingCreated } from './_lib/telegram.js';
-import { notifyBookingEmail } from './_lib/resend.js';
+import { confirmBookingEmail, notifyBookingEmail } from './_lib/resend.js';
 
 const serviceIdMap: Record<string, string> = {
   'Garden Design': 'garden-design',
@@ -96,6 +96,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     await Promise.all([
       notifyBookingCreated(bookingNotification),
       notifyBookingEmail(bookingNotification),
+      confirmBookingEmail(bookingNotification),
     ]);
 
     sendJson(res, 201, { ok: true });

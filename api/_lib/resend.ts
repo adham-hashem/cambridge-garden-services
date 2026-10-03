@@ -32,6 +32,16 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
+function safeImageUrl(value: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseRecipients(value: string | undefined) {
   return (value || '')
     .split(',')
@@ -117,15 +127,77 @@ function htmlEmail(booking: BookingEmail) {
   `;
 }
 
-export async function notifyBookingEmail(booking: BookingEmail) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
-  const to = parseRecipients(process.env.BOOKING_EMAIL_TO);
+function customerTextEmail(booking: BookingEmail) {
+  return [
+    `Hello ${booking.name},`,
+    '',
+    'Thank you for contacting Cambridge Garden Services. We have received your booking request and will be in touch soon.',
+    '',
+    `Reference: ${compact(booking.id)}`,
+    `Service: ${booking.projectType}`,
+    `Budget: ${compact(booking.budget)}`,
+    `Name: ${booking.name}`,
+    `Email: ${booking.email}`,
+    `Phone: ${compact(booking.phone)}`,
+    `Address: ${compact(booking.address)}`,
+    `Promo code: ${compact(booking.promoCode)}`,
+    '',
+    'Project details:',
+    booking.projectDetails,
+    '',
+    `Uploaded image: ${compact(booking.attachmentUrl)}`,
+    '',
+    'Cambridge Garden Services',
+    'info@cambridgegardenservices.co.uk',
+  ].join('\n');
+}
 
-  if (!apiKey || !from || to.length === 0) {
-    console.warn('Resend email skipped: RESEND_API_KEY, RESEND_FROM_EMAIL, or BOOKING_EMAIL_TO is not configured');
-    return;
-  }
+function customerHtmlEmail(booking: BookingEmail) {
+  const imageUrl = safeImageUrl(booking.attachmentUrl);
+  return `
+    <div style="margin:0;padding:0;background:#f7f2e8;font-family:Arial,sans-serif;color:#1a3c2e;">
+      <div style="max-width:680px;margin:0 auto;padding:32px 18px;">
+        <div style="background:#fffaf0;border:1px solid #d8dcc7;border-radius:8px;overflow:hidden;">
+          <div style="background:#1a3c2e;padding:26px 28px;color:#fffaf0;">
+            <h1 style="margin:0;font-family:Georgia,serif;font-size:28px;font-weight:400;">Cambridge Garden Services</h1>
+          </div>
+          <div style="padding:24px 28px;">
+            <p style="margin:0 0 12px;font-size:16px;">Hello ${escapeHtml(booking.name)},</p>
+            <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Thank you for contacting us. We have received your booking request and will be in touch soon.</p>
+            <table role="presentation" style="width:100%;border-collapse:collapse;">
+              ${detailRow('Reference', booking.id)}
+              ${detailRow('Service', booking.projectType)}
+              ${detailRow('Budget', booking.budget)}
+              ${detailRow('Name', booking.name)}
+              ${detailRow('Email', booking.email)}
+              ${detailRow('Phone', booking.phone)}
+              ${detailRow('Address', booking.address)}
+              ${detailRow('Promo code', booking.promoCode)}
+            </table>
+            <div style="margin-top:22px;padding-top:22px;border-top:1px solid #d8dcc7;">
+              <p style="margin:0 0 10px;color:#66756f;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Project details</p>
+              <p style="margin:0;font-size:15px;line-height:1.65;white-space:pre-wrap;">${escapeHtml(booking.projectDetails)}</p>
+            </div>
+            ${imageUrl ? `<p style="margin:22px 0 0;font-size:14px;">Uploaded image: <a href="${escapeHtml(imageUrl)}" style="color:#1a3c2e;">View image</a></p>` : ''}
+            <p style="margin:28px 0 0;font-size:14px;">Cambridge Garden Services<br /><a href="mailto:info@cambridgegardenservices.co.uk" style="color:#1a3c2e;">info@cambridgegardenservices.co.uk</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function sendEmail(message: {
+  from: string;
+  to: string[];
+  replyTo: string;
+  subject: string;
+  text: string;
+  html: string;
+  idempotencyKey?: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
@@ -137,16 +209,16 @@ export async function notifyBookingEmail(booking: BookingEmail) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'User-Agent': 'cambridge-garden-services/1.0',
-        ...(booking.id ? { 'Idempotency-Key': `booking-${booking.id}` } : {}),
+        ...(message.idempotencyKey ? { 'Idempotency-Key': message.idempotencyKey } : {}),
       },
       signal: controller.signal,
       body: JSON.stringify({
-        from,
-        to,
-        reply_to: booking.email,
-        subject: `New garden booking from ${booking.name}`,
-        text: plainTextEmail(booking),
-        html: htmlEmail(booking),
+        from: message.from,
+        to: message.to,
+        reply_to: message.replyTo,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
       }),
     });
 
@@ -159,4 +231,43 @@ export async function notifyBookingEmail(booking: BookingEmail) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function notifyBookingEmail(booking: BookingEmail) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+  const to = parseRecipients(process.env.BOOKING_EMAIL_TO);
+
+  if (!apiKey || !from || to.length === 0) {
+    console.warn('Resend email skipped: RESEND_API_KEY, RESEND_FROM_EMAIL, or BOOKING_EMAIL_TO is not configured');
+    return;
+  }
+
+  await sendEmail({
+    from,
+    to,
+    replyTo: booking.email,
+    subject: `New garden booking from ${booking.name}`,
+    text: plainTextEmail(booking),
+    html: htmlEmail(booking),
+    idempotencyKey: booking.id ? `booking-${booking.id}` : undefined,
+  });
+}
+
+export async function confirmBookingEmail(booking: BookingEmail) {
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!process.env.RESEND_API_KEY || !from) {
+    console.warn('Customer confirmation email skipped: Resend is not configured');
+    return;
+  }
+
+  await sendEmail({
+    from,
+    to: [booking.email],
+    replyTo: 'info@cambridgegardenservices.co.uk',
+    subject: 'We received your booking request | Cambridge Garden Services',
+    text: customerTextEmail(booking),
+    html: customerHtmlEmail(booking),
+    idempotencyKey: booking.id ? `booking-customer-${booking.id}` : undefined,
+  });
 }
