@@ -1,14 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  fetchAllBookings,
+  fetchBookingOverview,
   updateBookingStatus,
   updateBookingPrice,
+  updateBookingAppointment,
   deleteBooking,
   bookingStatuses,
   type BookingStatus,
 } from '@/lib/bookings';
 import type { Booking } from '@/types/admin';
 import { fetchPublishedServices, type ServiceAdminItem } from '@/lib/services';
+import { addDays, compareAppointments, dateKey, dateLabel, inPeriod, periodFor, timeLabel, weekStart, type DateFilter } from '@/lib/bookingInsights';
+import { downloadBookingPdf, downloadBookingReport, downloadCustomerReport, downloadDailySchedule, downloadMonthlyReport, downloadServiceReport, downloadWeeklySchedule } from '@/lib/bookingPdf';
+import BookingCalendar from '@/components/admin/BookingCalendar';
 import {
   Search,
   Trash2,
@@ -22,6 +26,7 @@ import {
   PoundSterling,
   Image as ImageIcon,
   ChevronDown,
+  Download,
 } from 'lucide-react';
 
 const PAGE_SIZE = 10;
@@ -36,7 +41,6 @@ const statusColors: Record<BookingStatus, string> = {
 
 export default function BookingsPanel() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<BookingStatus | ''>('');
@@ -46,17 +50,27 @@ export default function BookingsPanel() {
   const [priceInput, setPriceInput] = useState<string>('');
   const [priceSaving, setPriceSaving] = useState(false);
   const [services, setServices] = useState<ServiceAdminItem[]>([]);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [customDate, setCustomDate] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [reportWeek, setReportWeek] = useState(dateKey(new Date()));
+  const [reportMonth, setReportMonth] = useState(dateKey(new Date()).slice(0, 7));
+  const [appointmentInput, setAppointmentInput] = useState('');
+  const [appointmentSaving, setAppointmentSaving] = useState(false);
+  const [exporting, setExporting] = useState('');
+  const [error, setError] = useState('');
+  const today = dateKey(new Date());
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { bookings: data, total: count } = await fetchAllBookings(page, PAGE_SIZE, {
-      search: search || undefined,
-      status: statusFilter || undefined,
-    });
-    setBookings(data);
-    setTotal(count);
-    setLoading(false);
-  }, [page, search, statusFilter]);
+    try {
+      setBookings(await fetchBookingOverview());
+      setError('');
+    } catch {
+      setError('Bookings could not be loaded. Please try again.');
+    } finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
     load();
@@ -67,7 +81,7 @@ export default function BookingsPanel() {
   }, []);
 
   const handleStatusChange = async (id: string, status: BookingStatus) => {
-    await updateBookingStatus(id, status);
+    if (!await updateBookingStatus(id, status)) { setError('Status could not be saved.'); return; }
     setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status } : b));
     if (selected?.id === id) setSelected((prev) => prev ? { ...prev, status } : null);
   };
@@ -76,32 +90,115 @@ export default function BookingsPanel() {
     const price = parseFloat(priceInput);
     if (isNaN(price)) return;
     setPriceSaving(true);
-    await updateBookingPrice(id, price);
+    if (!await updateBookingPrice(id, price)) { setError('Price could not be saved.'); setPriceSaving(false); return; }
     setBookings((prev) => prev.map((b) => b.id === id ? { ...b, final_price: price } : b));
     if (selected?.id === id) setSelected((prev) => prev ? { ...prev, final_price: price } : null);
     setPriceSaving(false);
   };
 
   const handleDelete = async (id: string) => {
-    await deleteBooking(id);
+    if (!await deleteBooking(id)) { setError('Booking could not be deleted.'); return; }
     setConfirmDelete(null);
+    setSelected(null);
     load();
   };
 
   const openDetail = (booking: Booking) => {
     setSelected(booking);
     setPriceInput(booking.final_price?.toString() || '');
+    setAppointmentInput(booking.appointment_at ? new Date(booking.appointment_at).toISOString().slice(0, 16) : '');
   };
-
-  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const getServiceTitle = (serviceId: string | null) => {
     if (!serviceId) return null;
     return services.find((s) => s.id === serviceId)?.title || serviceId;
   };
+  const serviceName = (booking: Booking) => getServiceTitle(booking.service_id) || booking.project_type;
+  const serviceNames = Object.fromEntries(services.map((service) => [service.id, service.title]));
+  const period = periodFor(dateFilter, today, customDate, rangeStart, rangeEnd);
+  const filtered = useMemo(() => bookings.filter((booking) => {
+    if (!inPeriod(booking, period)) return false;
+    if (statusFilter && booking.status !== statusFilter) return false;
+    const term = search.trim().toLowerCase();
+    return !term || [booking.name, booking.email, booking.phone, booking.address].some((value) => value?.toLowerCase().includes(term));
+  }).sort((a, b) => compareAppointments(a, b)), [bookings, period?.start, period?.end, search, statusFilter]);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const visible = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const todayBookings = bookings.filter((booking) => booking.appointment_at && dateKey(booking.appointment_at) === today && booking.status === 'confirmed').sort((a, b) => new Date(a.appointment_at!).getTime() - new Date(b.appointment_at!).getTime());
+  const summary = [
+    ['New Bookings', bookings.filter((booking) => booking.status === 'new').length],
+    ["Today's Bookings", bookings.filter((booking) => booking.appointment_at && dateKey(booking.appointment_at) === today && booking.status !== 'cancelled').length],
+    ['Upcoming Bookings', bookings.filter((booking) => booking.appointment_at && new Date(booking.appointment_at).getTime() >= Date.now() && booking.status !== 'cancelled' && booking.status !== 'completed').length],
+    ['Completed', bookings.filter((booking) => booking.status === 'completed').length],
+    ['Cancelled', bookings.filter((booking) => booking.status === 'cancelled').length],
+  ] as const;
+  const runExport = async (name: string, action: () => Promise<void>) => {
+    setExporting(name);
+    setError('');
+    try { await action(); } catch (cause) { console.error(cause); setError('PDF could not be generated. Please try again.'); }
+    finally { setExporting(''); }
+  };
+  const saveAppointment = async () => {
+    if (!selected) return;
+    setAppointmentSaving(true);
+    // The input is labelled in the admin's local time; the stored value is UTC.
+    const iso = appointmentInput ? new Date(appointmentInput).toISOString() : null;
+    if (!await updateBookingAppointment(selected.id, iso)) setError('Appointment could not be saved. Check that the database migration has been applied.');
+    else {
+      setBookings((previous) => previous.map((booking) => booking.id === selected.id ? { ...booking, appointment_at: iso } : booking));
+      setSelected((previous) => previous ? { ...previous, appointment_at: iso } : null);
+      setError('');
+    }
+    setAppointmentSaving(false);
+  };
 
   return (
     <div>
+      {error && <div role="alert" className="mb-5 rounded-xl bg-red-50 px-4 py-3 font-sans text-sm text-red-700">{error} <button onClick={load} className="ml-2 underline">Retry</button></div>}
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {summary.map(([label, count]) => <div key={label} className={`rounded-2xl bg-cream-50 p-4 shadow-sm ${label === 'New Bookings' && count ? 'ring-2 ring-blue-400' : ''}`}>
+          <p className="font-sans text-xs text-forest-600">{label}</p>
+          <p className={`mt-2 font-serif text-2xl ${label === 'New Bookings' && count ? 'text-blue-700' : 'text-forest-800'}`}>{count}</p>
+        </div>)}
+      </div>
+
+      <section className="mb-7 rounded-2xl bg-cream-50 p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h2 className="font-serif text-xl text-forest-800">Today's Schedule</h2><p className="mt-1 font-sans text-xs text-forest-500">Confirmed appointments · {dateLabel(today, { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
+          <button onClick={() => runExport('daily', () => downloadDailySchedule(bookings.filter((b) => b.appointment_at && dateKey(b.appointment_at) === today), today, serviceNames))} disabled={!!exporting} className="flex items-center gap-2 rounded-full border border-sage-300 px-4 py-2 font-sans text-xs text-forest-700 hover:bg-sage-100 disabled:opacity-50"><Download size={14} />Download Today's Schedule</button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {todayBookings.map((booking) => <button key={booking.id} onClick={() => openDetail(booking)} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-sage-50 px-4 py-3 text-left font-sans text-sm text-forest-700 hover:bg-sage-100"><strong>{timeLabel(booking.appointment_at!)}</strong><span>{booking.name}</span><span>{serviceName(booking)}</span><span className="rounded-full bg-forest-100 px-2 py-0.5 text-xs">{booking.status}</span><span className="ml-auto text-xs underline">View Booking</span></button>)}
+          {!todayBookings.length && <p className="font-sans text-sm text-forest-500">No bookings scheduled for today.</p>}
+        </div>
+      </section>
+
+      <BookingCalendar bookings={bookings} serviceName={serviceName} onOpen={openDetail} />
+
+      <section className="mb-6 rounded-2xl bg-cream-50 p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-serif text-xl text-forest-800">Bookings</h2><p className="mt-1 font-sans text-xs text-forest-500">Dates use scheduled appointments. Unscheduled enquiries appear in All Bookings.</p></div><button onClick={() => runExport('bookings', () => downloadBookingReport(filtered, period, serviceNames))} disabled={!!exporting || !!(period && !period.start)} className="flex items-center gap-2 rounded-full bg-forest-700 px-4 py-2 font-sans text-xs text-white hover:bg-forest-800 disabled:opacity-50"><Download size={14} />Download Report PDF</button></div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {([
+            ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This Week'], ['nextWeek', 'Next Week'], ['month', 'This Month'], ['custom', 'Custom Date'], ['range', 'Custom Date Range'], ['all', 'All Bookings'],
+          ] as [DateFilter, string][]).map(([value, label]) => <button key={value} onClick={() => { setDateFilter(value); setPage(0); }} className={`rounded-full px-4 py-2 font-sans text-xs ${dateFilter === value ? 'bg-forest-700 text-white' : 'bg-sage-100 text-forest-700 hover:bg-sage-200'}`}>{label}</button>)}
+        </div>
+        {dateFilter === 'custom' && <label className="mt-4 block font-sans text-xs text-forest-600">Booking date<input type="date" value={customDate} onChange={(e) => { setCustomDate(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 text-sm text-forest-800" /></label>}
+        {dateFilter === 'range' && <div className="mt-4 flex flex-wrap gap-3"><label className="font-sans text-xs text-forest-600">Start date<input type="date" value={rangeStart} max={rangeEnd || undefined} onChange={(e) => { setRangeStart(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 text-sm text-forest-800" /></label><label className="font-sans text-xs text-forest-600">End date<input type="date" value={rangeEnd} min={rangeStart || undefined} onChange={(e) => { setRangeEnd(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 text-sm text-forest-800" /></label></div>}
+        <p className="mt-3 font-sans text-xs text-forest-500">{period?.label || 'All booking dates'} · {filtered.length} bookings</p>
+      </section>
+
+      <section className="mb-6 rounded-2xl bg-cream-50 p-4 shadow-sm sm:p-6">
+        <h2 className="font-serif text-xl text-forest-800">PDF Reports</h2>
+        <p className="mt-1 font-sans text-xs text-forest-500">Customer and service reports use the selected booking date filter above.</p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <label className="font-sans text-xs text-forest-600">Week containing<input type="date" value={reportWeek} onChange={(e) => setReportWeek(e.target.value)} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 text-sm" /></label>
+          <button onClick={() => { const start = weekStart(reportWeek); const days = Array.from({ length: 7 }, (_, index) => addDays(start, index)); runExport('weekly', () => downloadWeeklySchedule(bookings.filter((booking) => booking.appointment_at && dateKey(booking.appointment_at) >= days[0] && dateKey(booking.appointment_at) <= days[6]), days, serviceNames)); }} disabled={!!exporting || !reportWeek} className="rounded-full border border-sage-300 px-4 py-2 font-sans text-xs text-forest-700 disabled:opacity-50">Download Weekly Schedule</button>
+          <label className="font-sans text-xs text-forest-600">Report month<input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 text-sm" /></label>
+          <button onClick={() => runExport('monthly', () => downloadMonthlyReport(bookings.filter((booking) => booking.appointment_at && dateKey(booking.appointment_at).startsWith(reportMonth)), bookings, reportMonth, serviceNames))} disabled={!!exporting || !reportMonth} className="rounded-full border border-sage-300 px-4 py-2 font-sans text-xs text-forest-700 disabled:opacity-50">Download Monthly Report</button>
+          <button onClick={() => runExport('customers', () => downloadCustomerReport(filtered, bookings, period, serviceNames))} disabled={!!exporting || !!(period && !period.start)} className="rounded-full border border-sage-300 px-4 py-2 font-sans text-xs text-forest-700 disabled:opacity-50">Download Customer Report</button>
+          <button onClick={() => runExport('services', () => downloadServiceReport(filtered, bookings, period, serviceNames))} disabled={!!exporting || !!(period && !period.start)} className="rounded-full border border-sage-300 px-4 py-2 font-sans text-xs text-forest-700 disabled:opacity-50">Download Service Performance</button>
+        </div>
+      </section>
       {/* Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-xs">
@@ -130,7 +227,7 @@ export default function BookingsPanel() {
         <div className="flex items-center justify-center py-20">
           <Loader2 size={28} className="animate-spin text-forest-600" />
         </div>
-      ) : bookings.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="py-20 text-center">
           <p className="font-sans text-sm text-forest-500">No bookings found.</p>
         </div>
@@ -150,15 +247,16 @@ export default function BookingsPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map((booking) => (
+                  {visible.map((booking) => (
                     <tr
                       key={booking.id}
-                      className="cursor-pointer border-b border-sage-100 last:border-0 hover:bg-sage-50/30"
+                      className={`cursor-pointer border-b border-sage-100 last:border-0 hover:bg-sage-50/30 ${booking.status === 'new' ? 'bg-blue-50/70 border-l-4 border-l-blue-500' : ''}`}
                       onClick={() => openDetail(booking)}
                     >
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-sans text-sm font-medium text-forest-800">{booking.name}</p>
+                          {booking.status === 'new' && <span className="rounded-full bg-blue-600 px-2 py-0.5 font-sans text-[10px] font-bold uppercase text-white">NEW</span>}
                           <p className="font-sans text-xs text-forest-400">{booking.email}</p>
                         </div>
                       </td>
@@ -169,7 +267,7 @@ export default function BookingsPanel() {
                       </td>
                       <td className="hidden px-4 py-3 lg:table-cell">
                         <span className="font-sans text-xs text-forest-600">
-                          {new Date(booking.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {booking.appointment_at ? `${dateLabel(dateKey(booking.appointment_at), { day: 'numeric', month: 'short', year: 'numeric' })} ${timeLabel(booking.appointment_at)}` : 'Unscheduled'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -212,7 +310,7 @@ export default function BookingsPanel() {
 
           {totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
-              <p className="font-sans text-sm text-forest-500">Page {page + 1} of {totalPages} ({total} bookings)</p>
+              <p className="font-sans text-sm text-forest-500">Page {page + 1} of {totalPages} ({filtered.length} bookings)</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
@@ -239,12 +337,19 @@ export default function BookingsPanel() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-forest-950/60 backdrop-blur-sm" onClick={() => setSelected(null)} />
           <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-cream-50 shadow-2xl">
-            <div className="sticky top-0 flex items-center justify-between border-b border-sage-200 bg-cream-50 px-6 py-4">
-              <h2 className="font-serif text-xl font-medium text-forest-800">Booking Details</h2>
-              <button onClick={() => setSelected(null)} className="text-forest-600 hover:text-forest-800"><X size={22} /></button>
+            <div className="sticky top-0 flex flex-wrap items-center justify-between gap-3 border-b border-sage-200 bg-cream-50 px-6 py-4">
+              <h2 className="font-serif text-xl font-medium text-forest-800">Booking Details {selected.status === 'new' && <span className="ml-2 rounded-full bg-blue-600 px-2 py-1 align-middle font-sans text-xs text-white">NEW</span>}</h2>
+              <div className="flex items-center gap-3"><button onClick={() => runExport('individual', () => downloadBookingPdf(selected, serviceNames))} disabled={!!exporting} className="flex items-center gap-2 rounded-full bg-forest-700 px-4 py-2 font-sans text-xs text-white disabled:opacity-50"><Download size={14} />Download PDF</button><button onClick={() => setSelected(null)} aria-label="Close booking details" className="text-forest-600 hover:text-forest-800"><X size={22} /></button></div>
             </div>
 
             <div className="space-y-5 px-6 py-6">
+              <div>
+                <p className="mb-3 font-sans text-xs uppercase tracking-widest-2 text-forest-600">Appointment</p>
+                <div className="rounded-xl bg-sage-50/30 p-4">
+                  <p className="font-sans text-sm text-forest-700">{selected.appointment_at ? `${dateLabel(dateKey(selected.appointment_at), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at ${timeLabel(selected.appointment_at)} (Cambridge time)` : 'Not scheduled'}</p>
+                  <div className="mt-3 flex flex-wrap items-end gap-2"><label className="font-sans text-xs text-forest-600">Set appointment (your local time)<input type="datetime-local" value={appointmentInput} onChange={(e) => setAppointmentInput(e.target.value)} className="mt-1 block rounded-lg border border-sage-300 bg-cream-50 px-3 py-2 font-sans text-sm text-forest-800" /></label><button onClick={saveAppointment} disabled={appointmentSaving} className="rounded-lg bg-forest-700 px-4 py-2.5 font-sans text-xs text-white disabled:opacity-50">{appointmentSaving ? 'Saving...' : 'Save Appointment'}</button>{selected.appointment_at && <button onClick={() => setAppointmentInput('')} className="px-2 py-2 font-sans text-xs text-forest-600 underline">Clear date</button>}</div>
+                </div>
+              </div>
               {/* Customer Info */}
               <div>
                 <p className="mb-3 font-sans text-xs uppercase tracking-widest-2 text-forest-600">Customer</p>

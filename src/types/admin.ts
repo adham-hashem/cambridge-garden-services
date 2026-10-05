@@ -38,5 +38,6 @@ export interface Booking {
   promo_code: string | null;
   discount_amount: number | null;
   final_price: number | null;
+  appointment_at: string | null;
   created_at: string;
 }

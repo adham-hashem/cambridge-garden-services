@@ -3,6 +3,21 @@ import type { Booking } from '@/types/admin';
 
 export type BookingStatus = 'new' | 'contacted' | 'confirmed' | 'completed' | 'cancelled';
 
+export async function fetchBookingOverview(): Promise<Booking[]> {
+  const data = await apiGet<{ bookings: Booking[] }>('/api/admin/bookings?view=overview');
+  return data.bookings;
+}
+
+export async function updateBookingAppointment(id: string, appointmentAt: string | null): Promise<boolean> {
+  try {
+    await apiSend('/api/admin/bookings', 'PATCH', { id, appointment_at: appointmentAt });
+    return true;
+  } catch (error) {
+    console.error('Error updating booking appointment:', error);
+    return false;
+  }
+}
+
 export const bookingStatuses: { value: BookingStatus; label: string }[] = [
   { value: 'new', label: 'New' },
   { value: 'contacted', label: 'Contacted' },
