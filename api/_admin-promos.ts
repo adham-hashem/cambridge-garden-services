@@ -1,7 +1,7 @@
-import type { ApiRequest, ApiResponse } from '../_lib/types.js';
-import { assertMethod, assertSameOrigin, cleanSearch, getBody, getPagination, getQueryString, optionalNumber, optionalString, sendError, sendJson } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase.js';
+import type { ApiRequest, ApiResponse } from './_lib/types.js';
+import { assertMethod, assertSameOrigin, cleanSearch, getBody, getPagination, getQueryString, optionalNumber, optionalString, sendError, sendJson } from './_lib/http.js';
+import { requireAdmin } from './_lib/auth.js';
+import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 
 const discountTypes = new Set(['percentage', 'fixed']);
 

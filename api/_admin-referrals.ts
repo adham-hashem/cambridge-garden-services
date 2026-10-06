@@ -1,7 +1,7 @@
-import type { ApiRequest, ApiResponse } from '../_lib/types.js';
-import { assertMethod, assertSameOrigin, getBody, sendError, sendJson } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase.js';
+import type { ApiRequest, ApiResponse } from './_lib/types.js';
+import { assertMethod, assertSameOrigin, getBody, sendError, sendJson } from './_lib/http.js';
+import { requireAdmin } from './_lib/auth.js';
+import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 
 type ReferralCode = { id: string; code: string; referrer_name: string; referrer_email: string; active: boolean; created_at: string };
 type ReferralClaim = { id: string; referral_code_id: string; referred_email: string; booking_id: string | null; status: string; created_at: string; completed_at: string | null; reward_issued_at: string | null };

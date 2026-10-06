@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import type { ApiRequest, ApiResponse } from '../_lib/types.js';
-import { assertMethod, assertSameOrigin, getBody, requireString, sendError, sendJson } from '../_lib/http.js';
-import { assertSupabaseEnv, supabaseAdmin } from '../_lib/supabase.js';
+import type { ApiRequest, ApiResponse } from './_lib/types.js';
+import { assertMethod, assertSameOrigin, getBody, requireString, sendError, sendJson } from './_lib/http.js';
+import { assertSupabaseEnv, supabaseAdmin } from './_lib/supabase.js';
 
 const referencePattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

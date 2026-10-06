@@ -31,6 +31,22 @@
       "destination": "/api/sitemap"
     },
     {
+      "source": "/api/admin/promos",
+      "destination": "/api/discounts?__handler=admin-promos"
+    },
+    {
+      "source": "/api/admin/referrals",
+      "destination": "/api/discounts?__handler=admin-referrals"
+    },
+    {
+      "source": "/api/promo/validate",
+      "destination": "/api/discounts?__handler=promo-validate"
+    },
+    {
+      "source": "/api/referrals/access",
+      "destination": "/api/discounts?__handler=referral-access"
+    },
+    {
       "source": "/((?!api/|assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
