@@ -73,8 +73,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const { data: quoteId, error } = await supabaseAdmin.rpc('submit_quote_request', payload);
     if (error) {
-      if (error.message.includes('Promo code is not valid')) {
-        sendJson(res, 400, { error: 'Promo code is not valid' });
+      if (/Promo code is not valid|Referral code is not valid|Credit code is not valid|code requires a budget estimate/.test(error.message)) {
+        sendJson(res, 400, { error: error.message });
         return;
       }
       throw error;

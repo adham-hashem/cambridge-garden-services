@@ -77,11 +77,13 @@ export default function QuoteForm({
   const [uploading, setUploading] = useState(false);
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [appliedKind, setAppliedKind] = useState<'promo' | 'referral' | 'credit'>('promo');
   const [promoValidating, setPromoValidating] = useState(false);
   const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedBudget, setSelectedBudget] = useState('');
   const [customBudget, setCustomBudget] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (initialProjectType) setSelectedProjectType(initialProjectType);
@@ -98,6 +100,13 @@ export default function QuoteForm({
     : selectedBudget ? budgetToEstimate[selectedBudget] || 0 : 0;
   const discountAmount = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).discountAmount : 0;
   const finalPrice = appliedPromo ? calculateDiscount(appliedPromo, baseEstimate).finalPrice : baseEstimate;
+
+  useEffect(() => {
+    if (appliedPromo && appliedKind !== 'promo' && baseEstimate <= 0) {
+      setAppliedPromo(null);
+      setPromoMessage({ type: 'error', text: 'Choose a budget amount before using a referral or credit code.' });
+    }
+  }, [appliedPromo, appliedKind, baseEstimate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,11 +142,19 @@ export default function QuoteForm({
     setPromoValidating(true);
     setPromoMessage(null);
 
-    const result = await validatePromoCode(promoInput.trim());
+    const email = String(new FormData(formRef.current!).get('email') || '');
+    const result = await validatePromoCode(promoInput.trim(), email);
 
     if (result.valid && result.promoCode) {
+      if ((result.kind === 'referral' || result.kind === 'credit') && baseEstimate <= 0) {
+        setAppliedPromo(null);
+        setPromoMessage({ type: 'error', text: 'Choose a budget amount before applying a referral or credit code.' });
+        setPromoValidating(false);
+        return;
+      }
       setAppliedPromo(result.promoCode);
-      setPromoMessage({ type: 'success', text: `Code "${result.promoCode.code}" applied!` });
+      setAppliedKind(result.kind || 'promo');
+      setPromoMessage({ type: 'success', text: `${result.kind === 'referral' ? 'Referral' : result.kind === 'credit' ? 'Credit' : 'Promo'} code "${result.promoCode.code}" applied!` });
     } else {
       setAppliedPromo(null);
       setPromoMessage({ type: 'error', text: result.error || 'Invalid code' });
@@ -148,6 +165,7 @@ export default function QuoteForm({
 
   const handleRemovePromo = () => {
     setAppliedPromo(null);
+    setAppliedKind('promo');
     setPromoInput('');
     setPromoMessage(null);
   };
@@ -167,6 +185,11 @@ export default function QuoteForm({
     const customBudgetValue = String(formData.get('custom_budget') || '').trim();
     const savedBudget = budget === CUSTOM_BUDGET_OPTION ? customBudgetValue : budget;
     const projectType = String(formData.get('project_type') || '');
+    if (appliedPromo && appliedKind !== 'promo' && baseEstimate <= 0) {
+      setPromoMessage({ type: 'error', text: 'Choose a budget amount before using this code.' });
+      setStatus('idle');
+      return;
+    }
 
     if (budget === CUSTOM_BUDGET_OPTION && !customBudgetValue) {
       setStatus('error');
@@ -274,12 +297,15 @@ export default function QuoteForm({
 
   const formJsx = (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       className={`space-y-6 ${isModal ? 'p-2' : 'reveal reveal-delay-3 rounded-3xl bg-cream-50 p-8 lg:p-12'}`}
     >
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Name" name="name" required />
-            <Field label="Email" name="email" type="email" required />
+            <Field label="Email" name="email" type="email" required onChange={() => {
+              if (appliedKind !== 'promo' && appliedPromo) handleRemovePromo();
+            }} />
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Phone" name="phone" type="tel" />
@@ -367,7 +393,7 @@ export default function QuoteForm({
           <div className="rounded-xl border border-sage-200/60 bg-sage-50/30 p-4">
             <label className="mb-2 flex items-center gap-2 font-sans text-xs uppercase tracking-widest-2 text-forest-700">
               <Tag size={14} />
-              Promo Code
+              Promo / Referral Code
             </label>
             {!appliedPromo ? (
               <div className="flex flex-col gap-2 min-[420px]:flex-row">
@@ -393,7 +419,7 @@ export default function QuoteForm({
                 <div className="flex items-center gap-2">
                   <Check size={16} className="text-forest-600" />
                   <span className="font-sans text-sm font-medium text-forest-700">
-                    {appliedPromo.code}
+                    {appliedPromo.code} {appliedKind !== 'promo' && <span className="text-xs font-normal">({appliedKind === 'credit' ? 'credit' : 'referral'})</span>}
                   </span>
                   <span className="font-sans text-xs text-forest-500">
                     {appliedPromo.discount_type === 'percentage'
@@ -432,7 +458,7 @@ export default function QuoteForm({
                 )}
                 {appliedPromo && baseEstimate > 0 && (
                   <div className="flex justify-between border-t border-sage-200 pt-1.5 font-serif text-lg font-medium text-forest-800">
-                    <span>After promo</span>
+                    <span>{appliedKind === 'referral' ? 'After referral' : appliedKind === 'credit' ? 'After credit' : 'After promo'}</span>
                     <span>£{finalPrice.toLocaleString()}</span>
                   </div>
                 )}
@@ -513,7 +539,10 @@ export default function QuoteForm({
             working days.
           </p>
         </div>
-        {formJsx}
+        <div className="relative isolate">
+          <div aria-hidden="true" className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-[url('/booking.webp')] bg-cover bg-center sm:-inset-6" />
+          <div className="relative">{formJsx}</div>
+        </div>
       </div>
     </section>
   );
@@ -524,11 +553,13 @@ function Field({
   name,
   type = 'text',
   required = false,
+  onChange,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
+  onChange?: () => void;
 }) {
   return (
     <div>
@@ -539,6 +570,7 @@ function Field({
         type={type}
         name={name}
         required={required}
+        onChange={onChange}
         className="w-full rounded-xl border border-sage-300/40 bg-cream-100/50 px-4 py-3 font-sans text-sm text-forest-800 placeholder-forest-700/30 outline-none transition-colors focus:border-forest-500 focus:bg-cream-50"
       />
     </div>

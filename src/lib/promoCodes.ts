@@ -64,11 +64,13 @@ export async function togglePromoCodeActive(id: string, active: boolean): Promis
 }
 
 export async function validatePromoCode(
-  code: string
-): Promise<{ valid: boolean; promoCode: PromoCode | null; error?: string }> {
+  code: string,
+  email?: string
+): Promise<{ valid: boolean; promoCode: PromoCode | null; kind?: 'promo' | 'referral' | 'credit'; error?: string }> {
   try {
-    return await apiSend<{ valid: boolean; promoCode: PromoCode | null; error?: string }>('/api/promo/validate', 'POST', {
+    return await apiSend<{ valid: boolean; promoCode: PromoCode | null; kind?: 'promo' | 'referral' | 'credit'; error?: string }>('/api/promo/validate', 'POST', {
       code: code.toUpperCase(),
+      email,
     });
   } catch {
     return { valid: false, promoCode: null, error: 'Failed to validate code' };

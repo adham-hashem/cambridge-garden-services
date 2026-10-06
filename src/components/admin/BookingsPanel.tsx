@@ -115,13 +115,13 @@ export default function BookingsPanel() {
   };
   const serviceName = (booking: Booking) => getServiceTitle(booking.service_id) || booking.project_type;
   const serviceNames = Object.fromEntries(services.map((service) => [service.id, service.title]));
-  const period = periodFor(dateFilter, today, customDate, rangeStart, rangeEnd);
+  const period = useMemo(() => periodFor(dateFilter, today, customDate, rangeStart, rangeEnd), [dateFilter, today, customDate, rangeStart, rangeEnd]);
   const filtered = useMemo(() => bookings.filter((booking) => {
     if (!inPeriod(booking, period)) return false;
     if (statusFilter && booking.status !== statusFilter) return false;
     const term = search.trim().toLowerCase();
     return !term || [booking.name, booking.email, booking.phone, booking.address].some((value) => value?.toLowerCase().includes(term));
-  }).sort((a, b) => compareAppointments(a, b)), [bookings, period?.start, period?.end, search, statusFilter]);
+  }).sort((a, b) => compareAppointments(a, b)), [bookings, period, search, statusFilter]);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const visible = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const todayBookings = bookings.filter((booking) => booking.appointment_at && dateKey(booking.appointment_at) === today && booking.status === 'confirmed').sort((a, b) => new Date(a.appointment_at!).getTime() - new Date(b.appointment_at!).getTime());
@@ -356,11 +356,11 @@ export default function BookingsPanel() {
                 <div className="space-y-2 rounded-xl bg-sage-50/30 p-4">
                   <p className="font-serif text-lg font-medium text-forest-800">{selected.name}</p>
                   <div className="flex items-center gap-2 font-sans text-sm text-forest-600">
-                    <Mail size={14} /> {selected.email}
+                    <Mail size={14} /> <a href={`mailto:${selected.email}`} className="transition-colors hover:text-forest-800 hover:underline focus-visible:underline">{selected.email}</a>
                   </div>
                   {selected.phone && (
                     <div className="flex items-center gap-2 font-sans text-sm text-forest-600">
-                      <Phone size={14} /> {selected.phone}
+                      <Phone size={14} /> <a href={`tel:${selected.phone}`} className="transition-colors hover:text-forest-800 hover:underline focus-visible:underline">{selected.phone}</a>
                     </div>
                   )}
                   {selected.address && (

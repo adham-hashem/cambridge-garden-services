@@ -63,6 +63,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const body = getBody<{ id?: unknown; input?: Record<string, unknown> }>(req);
     const input = normalizePromo((body.input || body) as Record<string, unknown>, req.method === 'PATCH');
+    if (typeof input.code === 'string' && (input.code.startsWith('FR-') || input.code.startsWith('CR-'))) {
+      const table = input.code.startsWith('FR-') ? 'referral_codes' : 'referral_credits';
+      const { data: reserved, error: lookupError } = await supabaseAdmin.from(table)
+        .select('id').eq('code', input.code).maybeSingle();
+      if (lookupError) throw lookupError;
+      if (reserved) {
+        sendJson(res, 409, { error: 'This code already belongs to a referral or credit' });
+        return;
+      }
+    }
 
     if (req.method === 'POST') {
       const { data, error } = await supabaseAdmin.from('promo_codes').insert(input).select('*').single();

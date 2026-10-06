@@ -8,6 +8,7 @@ import ClimateSection from '@/components/ClimateSection';
 import About from '@/components/About';
 import Journal from '@/components/Journal';
 import QuoteForm from '@/components/QuoteForm';
+import RecommendFriend from '@/components/RecommendFriend';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import { localBusinessStructuredData, pageSeo, websiteStructuredData } from '@/lib/seo';
@@ -35,6 +36,7 @@ export default function HomePage() {
         <QuoteForm />
       </main>
       <Footer />
+      <RecommendFriend />
     </div>
   );
 }

@@ -24,32 +24,57 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     assertSameOrigin(req);
     assertSupabaseEnv();
 
-    const body = getBody<{ code?: unknown }>(req);
+    const body = getBody<{ code?: unknown; email?: unknown }>(req);
     const code = requireString(body.code, 'Promo code', 40).toUpperCase();
-    const { data, error } = await supabaseAdmin
-      .from('promo_codes')
-      .select('*')
-      .eq('code', code)
-      .eq('active', true)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) {
-      sendJson(res, 200, { valid: false, promoCode: null, error: 'Code not found' });
+    const { data: promo, error: promoError } = await supabaseAdmin.from('promo_codes')
+      .select('*').eq('code', code).maybeSingle();
+    if (promoError) throw promoError;
+    // Existing promo codes take precedence, including codes with a reserved-looking prefix.
+    if (promo) {
+      if (!promo.active) {
+        sendJson(res, 200, { valid: false, promoCode: null, error: 'Code not found' });
+        return;
+      }
+      if (promo.expires_at && new Date(promo.expires_at) <= new Date()) {
+        sendJson(res, 200, { valid: false, promoCode: null, error: 'This code has expired' });
+        return;
+      }
+      if (promo.usage_limit !== null && promo.usage_count >= promo.usage_limit) {
+        sendJson(res, 200, { valid: false, promoCode: null, error: 'This code has reached its usage limit' });
+        return;
+      }
+      sendJson(res, 200, { valid: true, kind: 'promo', promoCode: publicPromoFields(promo) });
       return;
     }
-
-    if (data.expires_at && new Date(data.expires_at) <= new Date()) {
-      sendJson(res, 200, { valid: false, promoCode: null, error: 'This code has expired' });
+    if (code.startsWith('FR-') || code.startsWith('CR-')) {
+      const email = typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 200) : '';
+      const { data, error } = await supabaseAdmin.rpc('validate_referral_or_credit', { p_code: code, p_email: email });
+      if (error) throw error;
+      const result = data as { valid: boolean; error?: string; kind?: 'referral' | 'credit'; discount_type?: 'fixed' | 'percentage'; discount_value?: number };
+      if (!result.valid) {
+        sendJson(res, 200, { valid: false, promoCode: null, error: result.error || 'Code not valid' });
+        return;
+      }
+      sendJson(res, 200, {
+        valid: true,
+        kind: result.kind,
+        promoCode: {
+          id: code,
+          code,
+          description: result.kind === 'credit' ? 'Referral thank-you credit' : 'Recommend a Friend discount',
+          discount_type: result.discount_type,
+          discount_value: result.discount_value,
+          expires_at: null,
+          usage_limit: null,
+          usage_count: 0,
+          active: true,
+          created_at: '',
+          updated_at: '',
+        },
+      });
       return;
     }
-
-    if (data.usage_limit !== null && data.usage_count >= data.usage_limit) {
-      sendJson(res, 200, { valid: false, promoCode: null, error: 'This code has reached its usage limit' });
-      return;
-    }
-
-    sendJson(res, 200, { valid: true, promoCode: publicPromoFields(data) });
+    sendJson(res, 200, { valid: false, promoCode: null, error: 'Code not found' });
   } catch (error) {
     sendError(res, error);
   }

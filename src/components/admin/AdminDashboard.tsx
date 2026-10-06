@@ -11,6 +11,7 @@ import ArticlesPanel from '@/components/admin/ArticlesPanel';
 import ClimatePanel from '@/components/admin/ClimatePanel';
 import TestimonialsPanel from '@/components/admin/TestimonialsPanel';
 import InspirationPanel from '@/components/admin/InspirationPanel';
+import ReferralsPanel from '@/components/admin/ReferralsPanel';
 import {
   LogOut,
   Loader2,
@@ -23,12 +24,14 @@ import {
   Leaf,
   MessageSquareQuote,
   Compass,
+  UsersRound,
 } from 'lucide-react';
 
-type Tab = 'bookings' | 'services' | 'projects' | 'inspiration' | 'testimonials' | 'promos' | 'articles' | 'climate';
+type Tab = 'bookings' | 'referrals' | 'services' | 'projects' | 'inspiration' | 'testimonials' | 'promos' | 'articles' | 'climate';
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarCheck }[] = [
   { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
+  { id: 'referrals', label: 'Referrals', icon: UsersRound },
   { id: 'services', label: 'Services', icon: ListTree },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'inspiration', label: 'Inspiration', icon: Compass },
@@ -122,6 +125,7 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-7xl px-6 py-8">
         {activeTab === 'bookings' && <BookingsPanel />}
+        {activeTab === 'referrals' && <ReferralsPanel />}
         {activeTab === 'services' && <ServicesPanel />}
         {activeTab === 'projects' && <ProjectsPanel />}
         {activeTab === 'inspiration' && <InspirationPanel />}
