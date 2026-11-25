@@ -25,6 +25,11 @@
       "permanent": true
     }
   ],
+  "functions": {
+    "api/designer.ts": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/sitemap.xml",
@@ -45,6 +50,14 @@
     {
       "source": "/api/referrals/access",
       "destination": "/api/discounts?__handler=referral-access"
+    },
+    {
+      "source": "/api/designer/:handler",
+      "destination": "/api/designer?__handler=:handler"
+    },
+    {
+      "source": "/api/admin/designer",
+      "destination": "/api/designer?__handler=admin"
     },
     {
       "source": "/((?!api/|assets/|.*\\..*).*)",

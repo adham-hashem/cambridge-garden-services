@@ -9,6 +9,11 @@ import ClimatePage from '@/components/ClimatePage';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import TestimonialsPage from '@/components/TestimonialsPage';
 import InspirationPage from '@/components/InspirationPage';
+import DesignerLanding from '@/components/designer/DesignerLanding';
+import ScratchWizard from '@/components/designer/ScratchWizard';
+import RedesignPage from '@/components/designer/RedesignPage';
+import DesignerProject from '@/components/designer/DesignerProject';
+import MyVisualizations from '@/components/designer/MyVisualizations';
 import NotFoundPage from '@/components/NotFoundPage';
 import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -27,6 +32,11 @@ function App() {
           <Route path="/journal/:id" element={<ArticlePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/climate-ready" element={<ClimatePage />} />
+          <Route path="/ai-garden-designer" element={<DesignerLanding />} />
+          <Route path="/ai-garden-designer/plan" element={<ScratchWizard />} />
+          <Route path="/ai-garden-designer/redesign" element={<RedesignPage />} />
+          <Route path="/ai-garden-designer/project/:projectId" element={<DesignerProject />} />
+          <Route path="/my-visualizations" element={<MyVisualizations />} />
           <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
           <Route path="/admin/:tab" element={<AdminDashboard />} />
           <Route path="*" element={<NotFoundPage />} />

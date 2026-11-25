@@ -7,6 +7,7 @@ type NavLink = { label: string; hash?: string; to?: string };
 const navLinks: NavLink[] = [
   { label: 'Services', to: '/services' },
   { label: 'Inspiration', to: '/inspiration' },
+  { label: 'AI Designer', to: '/ai-garden-designer' },
   { label: 'Projects', hash: 'projects' },
   { label: 'Testimonials', to: '/testimonials' },
   { label: 'About', to: '/about' },
@@ -76,7 +77,7 @@ export default function Navigation() {
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-8 lg:flex">
+        <ul className="hidden items-center gap-4 xl:gap-8 lg:flex">
           {navLinks.map((link) => (
             <li key={link.hash || link.to}>
               {link.to ? (
