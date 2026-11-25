@@ -76,3 +76,34 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #6f8e6b;
 }
+
+/* AI Garden Designer: infinite gallery rows */
+@keyframes cgs-marquee-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes cgs-marquee-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+.cgs-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.cgs-marquee-right { animation-name: cgs-marquee-right; }
+.cgs-marquee-left { animation-name: cgs-marquee-left; }
+
+@media (hover: hover) and (pointer: fine) {
+  .cgs-marquee:hover .cgs-marquee-track { animation-play-state: paused; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cgs-marquee-track { animation: none !important; }
+  .cgs-marquee { overflow-x: auto; }
+}
