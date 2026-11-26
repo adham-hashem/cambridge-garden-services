@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowDown, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function Hero() {
   const [scrollY, setScrollY] = useState(0);
@@ -56,7 +57,7 @@ export default function Hero() {
         </p>
 
         <div
-          className="opacity-0 animate-fade-up mt-8 flex w-full max-w-xs flex-col items-stretch gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:justify-center sm:gap-5"
+          className="opacity-0 animate-fade-up mt-8 flex w-full max-w-xs flex-col items-stretch gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-5"
           style={{ animationDelay: '1.6s' }}
         >
           <a
@@ -73,6 +74,13 @@ export default function Hero() {
             Request a Free Quote
             <ArrowRight size={15} className="transition-transform duration-500 group-hover:translate-x-1 sm:h-4 sm:w-4" />
           </button>
+          <Link
+            to="/ai-garden-designer"
+            className="group inline-flex items-center justify-center gap-2.5 rounded-full border border-sage-300/40 bg-gradient-to-br from-forest-700 to-forest-800 px-6 py-3.5 font-sans text-xs font-medium uppercase tracking-widest-2 text-white shadow-lg shadow-sage-400/30 ring-1 ring-sage-300/30 transition-all duration-500 hover:-translate-y-1 hover:from-forest-600 hover:to-forest-700 hover:shadow-xl hover:shadow-sage-300/50 sm:px-8 sm:py-4 sm:text-sm"
+          >
+            <Sparkles size={15} className="text-sage-200 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 sm:h-4 sm:w-4" />
+            Design with AI
+          </Link>
         </div>
       </div>
 
