@@ -25,7 +25,16 @@ type AdminOrder = {
   customer_email: string | null;
   created_at: string;
   paid_at: string | null;
-  designer_projects: { reference: string; kind: string; title: string } | null;
+  stripe_session_id: string;
+  designer_projects: {
+    id: string;
+    reference: string;
+    kind: string;
+    title: string;
+    status: string;
+    pdf_path: string | null;
+    designer_images: { concept_index: number; status: string; error: string | null }[];
+  } | null;
 };
 
 const BASE = '/api/admin/designer';
@@ -222,33 +231,57 @@ export default function DesignerPricingPanel() {
       <section>
         <h2 className="font-serif text-2xl text-forest-800">Recent orders</h2>
         <div className="mt-4 overflow-x-auto rounded-2xl border border-sage-200 bg-white p-4">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wider text-sage-600">
                 <th className="pb-2">Reference</th>
                 <th className="pb-2">Type</th>
                 <th className="pb-2">Package</th>
                 <th className="pb-2">Amount</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Email</th>
+                <th className="pb-2">Payment</th>
+                <th className="pb-2">Designs</th>
+                <th className="pb-2">Customer</th>
                 <th className="pb-2">Date</th>
+                <th className="pb-2">Files</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-t border-sage-100 text-forest-700">
-                  <td className="py-2">{order.designer_projects?.reference || '-'}</td>
-                  <td>{order.designer_projects?.kind || '-'}</td>
-                  <td>{order.package_id}</td>
-                  <td>{formatGbp(order.amount_pence)}</td>
-                  <td>{order.status}</td>
-                  <td>{order.customer_email || '-'}</td>
-                  <td>{new Date(order.paid_at || order.created_at).toLocaleDateString('en-GB')}</td>
-                </tr>
-              ))}
+              {orders.map((order) => {
+                const project = order.designer_projects;
+                const images = project?.designer_images || [];
+                const ready = images.filter((image) => image.status === 'ready');
+                const failed = images.filter((image) => image.status === 'failed');
+                const pending = order.status === 'paid' && !ready.length;
+                return (
+                  <tr key={order.id} className="border-t border-sage-100 align-top text-forest-700">
+                    <td className="py-2">{project?.reference || '-'}</td>
+                    <td>{project?.kind || '-'}</td>
+                    <td>{order.package_id}</td>
+                    <td>{formatGbp(order.amount_pence)}</td>
+                    <td>{order.status === 'paid' ? 'Paid' : 'Not completed'}</td>
+                    <td>
+                      {order.status !== 'paid' ? '-' : failed.length ? <span className="text-red-700" title={failed[0].error || ''}>{failed.length} failed</span> : pending ? <span className="text-amber-700">Pending</span> : `${ready.length} ready`}
+                    </td>
+                    <td>{order.customer_email || '-'}</td>
+                    <td>{new Date(order.paid_at || order.created_at).toLocaleDateString('en-GB')}</td>
+                    <td className="space-x-2 whitespace-nowrap">
+                      {project && ready.length > 0 && (
+                        <a className="text-forest-600 underline" href={`${BASE}?resource=file&id=${project.id}&kind=concept&index=${ready[0].concept_index}`} target="_blank" rel="noreferrer">
+                          Design
+                        </a>
+                      )}
+                      {project?.pdf_path && (
+                        <a className="text-forest-600 underline" href={`${BASE}?resource=file&id=${project.id}&kind=pdf`} target="_blank" rel="noreferrer">
+                          PDF
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
               {!orders.length && (
                 <tr>
-                  <td colSpan={7} className="py-4 text-forest-500">
+                  <td colSpan={9} className="py-4 text-forest-500">
                     No orders yet.
                   </td>
                 </tr>

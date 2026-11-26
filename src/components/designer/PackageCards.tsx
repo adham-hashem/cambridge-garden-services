@@ -46,19 +46,40 @@ export default function PackageCards({ selected, onSelect, actionLabel = 'Choose
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid gap-6 lg:grid-cols-3" role="radiogroup" aria-label="Choose your package">
       {packages.map((pack) => {
         const isSelected = selected === pack.id;
+        const choose = () => {
+          if (!disabled) onSelect(pack.id);
+        };
         return (
           <div
             key={pack.id}
-            className={`relative flex flex-col rounded-2xl border bg-white p-7 shadow-sm transition ${
-              isSelected ? 'border-forest-700 ring-2 ring-forest-700' : pack.recommended ? 'border-sage-400' : 'border-sage-200'
-            }`}
+            role="radio"
+            aria-checked={isSelected}
+            aria-disabled={disabled || undefined}
+            tabIndex={disabled ? -1 : 0}
+            onClick={choose}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                choose();
+              }
+            }}
+            className={`relative flex cursor-pointer flex-col rounded-2xl border p-7 shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 focus-visible:ring-offset-2 ${
+              isSelected
+                ? 'border-forest-700 bg-forest-50 ring-2 ring-forest-700'
+                : `bg-white hover:border-forest-500 hover:shadow-md ${pack.recommended ? 'border-sage-400' : 'border-sage-200'}`
+            } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
           >
             {pack.recommended && (
               <span className="absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-forest-800 px-4 py-1 text-xs font-medium uppercase tracking-wider text-cream-100">
                 <Sparkles size={12} /> Recommended
+              </span>
+            )}
+            {isSelected && (
+              <span className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-forest-700 text-cream-100" aria-hidden="true">
+                <Check size={16} />
               </span>
             )}
             <h3 className="font-serif text-2xl text-forest-800">{pack.name}</h3>
@@ -72,16 +93,14 @@ export default function PackageCards({ selected, onSelect, actionLabel = 'Choose
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelect(pack.id)}
-              className={`mt-8 rounded-full px-6 py-3 text-sm font-medium tracking-wide transition disabled:opacity-50 ${
-                isSelected ? 'bg-forest-800 text-cream-100' : 'border border-forest-700 text-forest-800 hover:bg-forest-700 hover:text-cream-100'
+            <span
+              aria-hidden="true"
+              className={`mt-8 rounded-full px-6 py-3 text-center text-sm font-medium tracking-wide transition ${
+                isSelected ? 'bg-forest-800 text-cream-100' : 'border border-forest-700 text-forest-800'
               }`}
             >
               {isSelected ? 'Selected' : actionLabel}
-            </button>
+            </span>
           </div>
         );
       })}

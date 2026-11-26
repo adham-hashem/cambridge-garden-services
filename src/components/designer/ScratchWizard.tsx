@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CreditCard, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 import DesignerShell from '@/components/designer/DesignerShell';
@@ -87,6 +87,33 @@ export default function ScratchWizard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { packages } = usePackages();
+  const wizardRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const firstRender = useRef(true);
+
+  // After every step change, once the new step has rendered, bring the top of the
+  // wizard (heading, progress bar and the start of the step) into view below the fixed header.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    // 'instant' overrides the site-wide smooth scrolling, which can be cancelled when the
+    // page height changes between steps. A second pass corrects any late layout shift.
+    const jump = () => wizardRef.current?.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' });
+    const frame = window.requestAnimationFrame(() => {
+      jump();
+      headingRef.current?.focus({ preventScroll: true });
+    });
+    const settle = window.setTimeout(() => {
+      const top = wizardRef.current?.getBoundingClientRect().top ?? 0;
+      if (Math.abs(top - 80) > 8) jump();
+    }, 150);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(settle);
+    };
+  }, [step]);
 
   useEffect(() => {
     try {
@@ -122,13 +149,11 @@ export default function ScratchWizard() {
     }
     setError(null);
     setStep((current) => Math.min(6, current + 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goTo = (target: number) => {
     setError(null);
     setStep(target);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const addElement = (type: ScratchInputs['elements'][number]['type']) => {
@@ -190,8 +215,10 @@ export default function ScratchWizard() {
       description="Plan a new garden layout from your plot dimensions with a six-step planner and receive a downloadable garden plan PDF."
       path="/ai-garden-designer/plan"
     >
-      <section className="mx-auto max-w-6xl px-6 py-10 lg:px-10">
-        <h1 className="font-serif text-4xl text-forest-800">Plan my garden from scratch</h1>
+      <section ref={wizardRef} className="mx-auto max-w-6xl scroll-mt-20 px-6 py-10 lg:px-10">
+        <h1 ref={headingRef} tabIndex={-1} className="font-serif text-4xl text-forest-800 focus:outline-none">
+          Plan my garden from scratch
+        </h1>
 
         <ol className="mt-8 grid grid-cols-6 gap-2" aria-label="Progress">
           {STEPS.map((label, index) => {

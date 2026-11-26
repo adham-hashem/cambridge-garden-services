@@ -13,6 +13,7 @@ import TestimonialsPanel from '@/components/admin/TestimonialsPanel';
 import InspirationPanel from '@/components/admin/InspirationPanel';
 import ReferralsPanel from '@/components/admin/ReferralsPanel';
 import DesignerPricingPanel from '@/components/admin/DesignerPricingPanel';
+import DesignerGalleryPanel from '@/components/admin/DesignerGalleryPanel';
 import {
   LogOut,
   Loader2,
@@ -27,9 +28,10 @@ import {
   Compass,
   UsersRound,
   Sprout,
+  Images,
 } from 'lucide-react';
 
-type Tab = 'bookings' | 'referrals' | 'services' | 'projects' | 'inspiration' | 'testimonials' | 'promos' | 'articles' | 'climate' | 'designer';
+type Tab = 'bookings' | 'referrals' | 'services' | 'projects' | 'inspiration' | 'testimonials' | 'promos' | 'articles' | 'climate' | 'designer' | 'designer-gallery';
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarCheck }[] = [
   { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
@@ -42,6 +44,7 @@ const tabs: { id: Tab; label: string; icon: typeof CalendarCheck }[] = [
   { id: 'articles', label: 'Articles', icon: Newspaper },
   { id: 'climate', label: 'Climate', icon: Leaf },
   { id: 'designer', label: 'AI Designer', icon: Sprout },
+  { id: 'designer-gallery', label: 'Designer Gallery', icon: Images },
 ];
 
 export default function AdminDashboard() {
@@ -137,6 +140,7 @@ export default function AdminDashboard() {
         {activeTab === 'articles' && <ArticlesPanel />}
         {activeTab === 'climate' && <ClimatePanel />}
         {activeTab === 'designer' && <DesignerPricingPanel />}
+        {activeTab === 'designer-gallery' && <DesignerGalleryPanel />}
       </div>
     </div>
   );
