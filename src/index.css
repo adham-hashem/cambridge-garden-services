@@ -111,7 +111,9 @@
 /* AI Garden Designer page only: soft garden photograph behind the options and pricing sections. */
 .cgs-designer-bg {
   background-color: #f5f1e8;
-  background-image: url('https://images.pexels.com/photos/37123675/pexels-photo-37123675.jpeg?auto=compress&cs=tinysrgb&w=1600');
+  background-image:
+    linear-gradient(rgba(249, 246, 239, 0.74), rgba(249, 246, 239, 0.74)),
+    url('https://images.pexels.com/photos/37123675/pexels-photo-37123675.jpeg?auto=compress&cs=tinysrgb&w=1600');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
