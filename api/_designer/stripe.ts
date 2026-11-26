@@ -26,10 +26,17 @@ async function stripeRequest<T>(path: string, init: { method: 'GET' | 'POST'; bo
   if (init.body) headers['Content-Type'] = 'application/x-www-form-urlencoded';
   if (init.idempotencyKey) headers['Idempotency-Key'] = init.idempotencyKey;
   const response = await fetch(`${STRIPE_API}${path}`, { method: init.method, headers, body: init.body });
-  const json = (await response.json().catch(() => ({}))) as { error?: { message?: string } } & Record<string, unknown>;
+  const json = (await response.json().catch(() => ({}))) as { error?: { message?: string; type?: string; code?: string } } & Record<string, unknown>;
   if (!response.ok) {
-    console.error('Stripe error', response.status, json.error?.message);
-    throw new HttpError(502, 'The payment provider rejected the request. Please try again.');
+    console.error('Stripe error', response.status, json.error?.type, json.error?.code, json.error?.message);
+    const reason = [json.error?.type, json.error?.code].filter(Boolean).join(' / ');
+    const hint =
+      response.status === 401
+        ? 'The Stripe key was not accepted. Check STRIPE_SECRET_KEY in Vercel.'
+        : response.status === 403 || json.error?.type === 'permission_error'
+          ? 'The Stripe restricted key is missing a permission (Checkout Sessions: Write).'
+          : 'The payment provider rejected the request. Please try again.';
+    throw new HttpError(502, reason ? `${hint} (${reason})` : hint);
   }
   return json as T;
 }
