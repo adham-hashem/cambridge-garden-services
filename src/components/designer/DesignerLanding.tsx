@@ -1,14 +1,22 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Camera, LayoutGrid } from 'lucide-react';
 import DesignerShell from '@/components/designer/DesignerShell';
 import GardenGallery from '@/components/designer/GardenGallery';
-import PackageCards from '@/components/designer/PackageCards';
-import type { PackageId } from '@/lib/designer/shared';
+import PackageCards, { usePackages } from '@/components/designer/PackageCards';
+import { formatGbp, type PackageId } from '@/lib/designer/shared';
 
 export default function DesignerLanding() {
   const [packageId, setPackageId] = useState<PackageId | null>(null);
   const query = packageId ? `?package=${packageId}` : '';
+  const { packages } = usePackages();
+  const chosen = packages?.find((pack) => pack.id === packageId);
+  const optionsRef = useRef<HTMLElement>(null);
+  const selectPackage = (id: PackageId) => {
+    setPackageId(id);
+    // Continue to the next step: choosing how to design the garden.
+    window.setTimeout(() => optionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+  };
 
   return (
     <DesignerShell
@@ -28,7 +36,13 @@ export default function DesignerLanding() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16 lg:px-10">
+      <div className="cgs-designer-bg">
+      <section ref={optionsRef} className="mx-auto max-w-6xl scroll-mt-24 px-6 py-16 lg:px-10">
+        {chosen && (
+          <p role="status" className="mb-8 rounded-xl border border-forest-200 bg-forest-50 px-5 py-3 text-center text-forest-800">
+            Package selected: <strong>{chosen.name}</strong> ({formatGbp(chosen.pricePence)}). Now choose how you would like to design your garden.
+          </p>
+        )}
         <div className="grid gap-8 md:grid-cols-2">
           <article className="flex flex-col rounded-3xl border border-sage-200 bg-white p-8 shadow-sm">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-forest-100 text-forest-700">
@@ -56,16 +70,17 @@ export default function DesignerLanding() {
         </div>
       </section>
 
-      <section className="bg-cream-50 py-16" id="pricing">
+      <section className="py-16" id="pricing">
         <div className="mx-auto max-w-6xl px-6 lg:px-10">
           <h2 className="text-center font-serif text-4xl text-forest-800">Choose your package</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-forest-600">Pick a package now, or choose one at the final step. You only pay once your project is ready to generate.</p>
           <div className="mt-12">
-            <PackageCards selected={packageId} onSelect={setPackageId} actionLabel="Choose this package" />
+            <PackageCards selected={packageId} onSelect={selectPackage} actionLabel="Choose this package" />
           </div>
           <p className="mt-8 text-center text-xs text-forest-500">Prices in GBP. Secure card payment. Cost figures in plans are estimates and not a quotation.</p>
         </div>
       </section>
+      </div>
     </DesignerShell>
   );
 }

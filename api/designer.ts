@@ -721,9 +721,133 @@ async function handleRecoverRedeem(req: ApiRequest, res: ApiResponse) {
   sendJson(res, 200, { ok: true });
 }
 
+
+const GALLERY_BUCKET = 'designer-gallery';
+
+type GalleryRow = { id: string; path: string; alt: string; sort_order: number; enabled: boolean; created_at: string; updated_at: string };
+
+function galleryUrl(path: string, version: string) {
+  const { data } = supabaseAdmin.storage.from(GALLERY_BUCKET).getPublicUrl(path);
+  return `${data.publicUrl}?v=${encodeURIComponent(version)}`;
+}
+
+async function handleGallery(res: ApiResponse) {
+  const { data, error } = await supabaseAdmin
+    .from('designer_gallery')
+    .select('*')
+    .eq('enabled', true)
+    .order('sort_order')
+    .order('created_at');
+  if (error) throw error;
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=60');
+  sendJson(res, 200, {
+    images: ((data || []) as GalleryRow[]).map((row) => ({ id: row.id, url: galleryUrl(row.path, row.updated_at), alt: row.alt })),
+  });
+}
+
+async function handleAdminGallery(req: ApiRequest, res: ApiResponse) {
+  if (req.method === 'GET') {
+    const { data, error } = await supabaseAdmin.from('designer_gallery').select('*').order('sort_order').order('created_at');
+    if (error) throw error;
+    sendJson(res, 200, {
+      images: ((data || []) as GalleryRow[]).map((row) => ({
+        id: row.id,
+        url: galleryUrl(row.path, row.updated_at),
+        alt: row.alt,
+        enabled: row.enabled,
+        sortOrder: row.sort_order,
+      })),
+    });
+    return;
+  }
+
+  const body = getBody<Record<string, unknown>>(req);
+  const action = str(body.action, 30);
+  const validPath = (value: unknown) => {
+    const path = str(value, 300);
+    if (!path.startsWith('gallery/') || path.includes('..')) throw new HttpError(400, 'Invalid image path');
+    return path;
+  };
+  const removeObject = async (path: string) => {
+    await supabaseAdmin.storage.from(GALLERY_BUCKET).remove([path]);
+  };
+
+  if (action === 'upload-url') {
+    const contentType = str(body.contentType, 40);
+    if (!IMAGE_TYPES.has(contentType)) throw new HttpError(400, 'Only JPEG, PNG and WebP images are allowed');
+    const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+    const path = `gallery/${Date.now()}-${randomUUID()}.${ext}`;
+    const { data, error } = await supabaseAdmin.storage.from(GALLERY_BUCKET).createSignedUploadUrl(path);
+    if (error) throw error;
+    sendJson(res, 200, { path: data.path, token: data.token });
+    return;
+  }
+
+  if (action === 'add') {
+    const path = validPath(body.path);
+    const { data: last } = await supabaseAdmin.from('designer_gallery').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+    const next = last && last.length ? (last[0].sort_order as number) + 1 : 0;
+    const { data, error } = await supabaseAdmin
+      .from('designer_gallery')
+      .insert({ path, alt: str(body.alt, 200), sort_order: next })
+      .select('*')
+      .single();
+    if (error) throw error;
+    sendJson(res, 200, { id: data.id });
+    return;
+  }
+
+  const id = str(body.id, 60);
+  if (action === 'replace' || action === 'toggle' || action === 'delete' || action === 'alt') {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new HttpError(400, 'Invalid image');
+    const { data: existing, error: findError } = await supabaseAdmin.from('designer_gallery').select('*').eq('id', id).maybeSingle();
+    if (findError) throw findError;
+    if (!existing) throw new HttpError(404, 'Image not found');
+    const row = existing as GalleryRow;
+    const now = new Date().toISOString();
+    if (action === 'delete') {
+      const { error } = await supabaseAdmin.from('designer_gallery').delete().eq('id', id);
+      if (error) throw error;
+      await removeObject(row.path);
+    } else if (action === 'replace') {
+      const path = validPath(body.path);
+      const { error } = await supabaseAdmin.from('designer_gallery').update({ path, updated_at: now }).eq('id', id);
+      if (error) throw error;
+      if (path !== row.path) await removeObject(row.path);
+    } else if (action === 'toggle') {
+      const { error } = await supabaseAdmin.from('designer_gallery').update({ enabled: body.enabled === true, updated_at: now }).eq('id', id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseAdmin.from('designer_gallery').update({ alt: str(body.alt, 200), updated_at: now }).eq('id', id);
+      if (error) throw error;
+    }
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (action === 'reorder') {
+    const ids = (Array.isArray(body.ids) ? body.ids : []).map((item) => str(item, 60)).filter((item) => /^[0-9a-f-]{36}$/i.test(item));
+    if (!ids.length || ids.length > 200) throw new HttpError(400, 'Invalid order');
+    await Promise.all(
+      ids.map(async (itemId, index) => {
+        const { error } = await supabaseAdmin.from('designer_gallery').update({ sort_order: index }).eq('id', itemId);
+        if (error) throw error;
+      })
+    );
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  throw new HttpError(400, 'Unknown gallery action');
+}
+
 async function handleAdmin(req: ApiRequest, res: ApiResponse) {
   requireAdmin(req);
   const resource = getQueryString(req.query.resource) || 'packages';
+  if (resource === 'gallery') {
+    await handleAdminGallery(req, res);
+    return;
+  }
   if (resource === 'packages') {
     if (req.method === 'GET') {
       const { data, error } = await supabaseAdmin.from('designer_packages').select('*').order('sort_order');
@@ -780,11 +904,36 @@ async function handleAdmin(req: ApiRequest, res: ApiResponse) {
   if (resource === 'orders') {
     const { data, error } = await supabaseAdmin
       .from('designer_orders')
-      .select('id, status, amount_pence, currency, package_id, customer_email, created_at, paid_at, designer_projects(reference, kind, title)')
+      .select(
+        'id, status, amount_pence, currency, package_id, customer_email, created_at, paid_at, stripe_session_id, designer_projects(id, reference, kind, title, status, pdf_path, pdf_generated_at, designer_images(concept_index, status, error))'
+      )
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) throw error;
     sendJson(res, 200, { orders: data });
+    return;
+  }
+  if (resource === 'file') {
+    // Admin access to a customer's saved design or PDF (short-lived signed link).
+    const projectId = getQueryString(req.query.id) || '';
+    if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new HttpError(400, 'Invalid project');
+    const { data: project } = await supabaseAdmin.from('designer_projects').select('*').eq('id', projectId).maybeSingle();
+    if (!project) throw new HttpError(404, 'Project not found');
+    const kind = getQueryString(req.query.kind);
+    let path: string | null = null;
+    if (kind === 'pdf') path = project.pdf_path;
+    else if (kind === 'original') path = project.original_path;
+    else if (kind === 'concept') {
+      const index = Math.round(num(getQueryString(req.query.index), 1, 6, 1));
+      const { data: image } = await supabaseAdmin.from('designer_images').select('path').eq('project_id', projectId).eq('concept_index', index).eq('status', 'ready').maybeSingle();
+      path = image?.path || null;
+    }
+    if (!path) throw new HttpError(404, 'File not found');
+    const { data, error } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, 120);
+    if (error || !data) throw new HttpError(404, 'File not found');
+    res.setHeader('Location', data.signedUrl);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.status(302).end();
     return;
   }
   throw new HttpError(404, 'Unknown resource');
@@ -808,6 +957,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const readOnly: Record<string, (req: ApiRequest, res: ApiResponse) => Promise<void> | void> = {
       packages: (_req, response) => handlePackages(response),
+      gallery: (_req, response) => handleGallery(response),
       project: handleProject,
       projects: handleProjects,
       file: handleFile,
