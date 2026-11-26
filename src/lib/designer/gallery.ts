@@ -25,9 +25,9 @@ export async function fetchAdminGallery() {
 }
 
 /**
- * Resizes and re-encodes an upload in the browser. The gallery shows images at
- * about 260 px high, so 1000 px high keeps them sharp on retina screens while
- * cutting file size sharply.
+ * Resizes and re-encodes an upload in the browser. The carousel shows images at
+ * about 320 px high and the lightbox shows them larger, so up to 1600 px high
+ * keeps them sharp while cutting file size sharply.
  */
 export async function optimiseGalleryImage(file: File): Promise<{ blob: Blob; contentType: string }> {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -35,7 +35,7 @@ export async function optimiseGalleryImage(file: File): Promise<{ blob: Blob; co
   }
   const bitmap = await createImageBitmap(file).catch(() => null);
   if (!bitmap) throw new Error(`${file.name}: this image could not be read`);
-  const scale = Math.min(1, 1000 / bitmap.height, 2000 / bitmap.width);
+  const scale = Math.min(1, 1600 / bitmap.height, 2400 / bitmap.width);
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
